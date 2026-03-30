@@ -1,0 +1,377 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --animation-duration: 40s;
+  --animation-direction: forwards;
+  --font-cairo: 'Cairo', Arial, Helvetica, sans-serif;
+  --font-inter: 'Inter', Arial, Helvetica, sans-serif;
+  --font-primary: 'Cairo', Arial, Helvetica, sans-serif;
+}
+
+html.theme-light,
+html.light {
+  --background: #ffffff;
+  --foreground: #171717;
+  color-scheme: light;
+}
+
+html.theme-dark,
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-cairo: var(--font-cairo);
+  --font-inter: var(--font-inter);
+  --font-primary: var(--font-primary);
+}
+
+/* Override dark-mode Tailwind utilities when forced light */
+html.light .dark\:bg-gray-900,
+html.light .dark\:bg-gray-800,
+html.light .dark\:bg-gray-700,
+html.light .dark\:bg-gray-600,
+html.light .dark\:bg-gray-500,
+html.light .dark\:bg-gray-400,
+html.light .dark\:bg-slate-900,
+html.light .dark\:bg-slate-800,
+html.light .dark\:bg-slate-700 {
+  background-color: #ffffff !important;
+}
+
+html.light .dark\:text-white,
+html.light .dark\:text-gray-100,
+html.light .dark\:text-gray-200,
+html.light .dark\:text-gray-300 {
+  color: #6782a5 !important;
+}
+
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  font-family: var(--font-cairo) !important;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-cairo);
+}
+
+html.dark body,
+html.theme-dark body {
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+html.light body,
+html.theme-light body {
+  background: #ffffff;
+  color: #171717;
+}
+
+html.dark .bg-white,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100,
+html.dark .bg-blue-50,
+html.dark .bg-slate-50,
+html.theme-dark .bg-white,
+html.theme-dark .bg-gray-50,
+html.theme-dark .bg-gray-100,
+html.theme-dark .bg-blue-50,
+html.theme-dark .bg-slate-50 {
+  background-color: #111827 !important;
+}
+
+html.light .bg-white,
+html.light .bg-gray-50,
+html.light .bg-gray-100,
+html.light .bg-blue-50,
+html.light .bg-slate-50,
+html.theme-light .bg-white,
+html.theme-light .bg-gray-50,
+html.theme-light .bg-gray-100,
+html.theme-light .bg-blue-50,
+html.theme-light .bg-slate-50 {
+  background-color: #f3f4f6 !important;
+}
+
+.theme-gradient-bg {
+ background: linear-gradient(to bottom right, #f9fafb, #a4acc3, #2c3b5b, #111827);
+}
+
+html.dark .theme-gradient-bg,
+html.theme-dark .theme-gradient-bg {
+  background-image: linear-gradient(to bottom right, #070b14, #111827) !important;
+}
+
+html.light .theme-gradient-bg,
+html.theme-light .theme-gradient-bg {
+  background-image: linear-gradient(to bottom right, #f9fafb, #f9fafb) !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.theme-dark .text-gray-900,
+html.theme-dark .text-gray-800,
+html.theme-dark .text-gray-700 {
+  color: #f8fafc !important;
+}
+
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.theme-dark .border-gray-200,
+html.theme-dark .border-gray-300 {
+  border-color: #374151 !important;
+}
+
+.language-ar, [dir="rtl"] {
+  font-family: var(--font-cairo) !important;
+}
+
+.language-en, [dir="ltr"] {
+  font-family: var(--font-cairo) !important;
+}
+
+@keyframes fade {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade {
+  animation: fade 0.3s ease-out;
+}
+
+/* Ensure Cairo font is applied to all elements */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  font-family: var(--font-cairo) !important;
+}
+
+/* CSS Variables for Background Gradient Animation */
+:root {
+  --gradient-background-start: rgb(181, 148, 0);
+  --gradient-background-end: rgb(255, 255, 7);
+  --first-color: 18, 113, 255;
+  --second-color: 221, 74, 255;
+  --third-color: 100, 220, 255;
+  --fourth-color: 200, 50, 50;
+  --fifth-color: 180, 180, 50;
+  --pointer-color: 140, 100, 255;
+  --size: 80%;
+  --blending-value: hard-light;
+}
+
+/* Custom Scrollbar Styling */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, 
+    rgba(108, 0, 162, 0.1), 
+    rgba(0, 17, 82, 0.1)
+  );
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+ rgb(255, 255, 200),
+rgb(255, 255, 150),
+rgb(255, 255, 100),
+rgb(200, 200, 50),
+rgb(150, 150, 30),
+  );
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+rgb(255, 255, 200),
+rgb(255, 255, 150),
+rgb(255, 255, 100),
+rgb(200, 200, 50),
+rgb(150, 150, 30),
+  );
+  transform: scale(1.05);
+}
+
+::-webkit-scrollbar-corner {
+  background: linear-gradient(45deg, 
+    rgba(108, 0, 162, 0.2), 
+    rgba(0, 17, 82, 0.2)
+  );
+}
+
+/* Firefox — thumb/track من NEXT_PUBLIC_* عبر layout.tsx */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color, rgb(255, 211, 16))
+    var(--scrollbar-track-color, rgba(108, 0, 162, 0.1));
+}
+
+/* Custom scrollbar for specific elements */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, 
+    rgba(108, 0, 162, 0.05), 
+    rgba(0, 17, 82, 0.05)
+  );
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, 
+    rgb(255, 255, 200),
+    rgb(255, 255, 100),
+    rgb(150, 150, 30),
+  );
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, 
+  rgb(255, 255, 200),
+rgb(255, 255, 150),
+rgb(255, 255, 100),
+rgb(200, 200, 50),
+rgb(150, 150, 30),
+  );
+}
+
+/* Hide scrollbar for chat messages */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* IE and Edge */
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.animate-first,
+.animate-second,
+.animate-third,
+.animate-fourth,
+.animate-fifth {
+  animation-delay: 0s !important;
+  animation-fill-mode: both; /* يبدأ من frame البداية */
+}
+
+/* Keyframe Animations for Background Gradient */
+@keyframes first {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1.1);
+  }
+}
+
+
+@keyframes second {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(-360deg) scale(0.9);
+  }
+}
+
+@keyframes third {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1.2);
+  }
+}
+
+@keyframes fourth {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(-360deg) scale(0.8);
+  }
+}
+
+@keyframes fifth {
+  0%{
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1.3);
+  }
+}
+
+/* Scroll Animation for InfiniteMovingCards */
+@keyframes scroll {
+  to {
+    transform: translate(calc(-50% - 0.5rem));
+  }
+}
+
+.animate-scroll {
+  animation: scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite;
+}
+
+/* Animation Classes */
+.animate-first {
+  animation: first 20s infinite linear;
+}
+
+.animate-second {
+  animation: second 25s infinite linear;
+}
+
+.animate-third {
+  animation: third 30s infinite linear;
+}
+
+.animate-fourth {
+  animation: fourth 35s infinite linear;
+}
+
+.animate-fifth {
+  animation: fifth 40s infinite linear;
+}

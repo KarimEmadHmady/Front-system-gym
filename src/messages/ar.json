@@ -1,0 +1,262 @@
+{
+  "Home": {
+    "title": "مرحبًا بك في متجرنا!",
+    "welcome": "سعداء بوجودك معنا. استمتع بتصفح منتجاتنا!"
+  },
+  "Navigation": {
+    "home": "الرئيسية",
+    "services": "الخدمات",
+    "pricing": "الأسعار",
+    "trainers": "المدربين",
+    "contact": "تواصل معنا",
+    "login": "تسجيل ",
+    "register": "إنشاء حساب",
+    "language": "EN"
+  },
+  "CalculatorsSection": {
+    "title": "أدوات حساب اللياقة البدنية",
+    "subtitle": "احسب مؤشرات صحتك ولياقتك البدنية",
+    "bmi": "حاسبة مؤشر كتلة الجسم",
+    "bodyFat": "حاسبة نسبة الدهون",
+    "calories": "حاسبة السعرات الحرارية",
+    "protein": "حاسبة البروتين",
+    "water": "حاسبة الماء",
+    "workout": "توصيات التمارين",
+    "clickToOpen": "اضغط لفتح {name}"
+  },
+  "AdminDashboard": {
+    "Header": {
+      "title": "لوحة تحكم الإدارة",
+      "welcome": "مرحباً {name}، إدارة شاملة لجميع عمليات الجيم",
+      "role": "إدارة"
+    },
+    "Tabs": {
+      "overview": "نظرة عامة",
+      "users": "إدارة المستخدمين",
+      "sessions": "الحصص", 
+      "plans": "الخطط",
+      "financial": "الماليات",
+      "reports": "التقارير",
+      "settings": "الإعدادات"
+    },
+    "Stats": {
+      "totalMembers": "إجمالي الأعضاء",
+      "activeTrainers": "المدربين النشطين",
+      "dailySessions": "الحصص اليومية",
+      "monthlyRevenue": "الإيرادات الشهرية",
+      "monthlyExpenses": "المصروفات الشهرية",
+      "netProfit": "الربح الصافي",
+      "loyaltyPoints": "نقاط الولاء الموزعة",
+      "newReviews": "التقييمات الجديدة",
+      "sinceLastMonth": "من الشهر الماضي"
+    },
+    "Logout": {
+      "btn": "تسجيل الخروج"
+    },
+    "Language": {
+      "btn": "EN"
+    },
+    "Loading": {
+      "message": "جاري التحميل..."
+    },
+    "Unauthorized": {
+      "message": "غير مصرح لك بالدخول إلى هذه الصفحة."
+    }
+  },
+  "ManagerDashboard": {
+    "Header": {
+      "title": "لوحة تحكم المدير",
+      "welcome": "مرحباً {name}، إدارة شاملة لجميع عمليات الجيم",
+      "role": "مدير"
+    },
+    "Tabs": {
+      "overview": "نظرة عامة",
+      "users": "إدارة المستخدمين",
+      "sessions": "الحصص",
+      "plans": "الخطط",
+      "reports": "التقارير",
+      "settings": "الإعدادات"
+    },
+    "Logout": {
+      "btn": "تسجيل الخروج"
+    },
+    "Language": {
+      "btn": "EN"
+    },
+    "Loading": {
+      "message": "جاري التحميل..."
+    }
+  },
+  "TrainerDashboard": {
+    "Header": {
+      "title": "لوحة تحكم المدرب",
+      "welcome": "مرحباً {name}، إدارة حصصك وعملائك",
+      "role": "مدرب"
+    },
+    "Tabs": {
+      "overview": "نظرة عامة",
+      "sessions": "حصصي",
+      "clients": "عملائي",
+      "plans": "خططي",
+      "progress": "التقدم",
+      "schedule": "جدولي"
+    },
+    "Logout": {
+      "btn": "تسجيل الخروج"
+    },
+    "Language": {
+      "btn": "EN"
+    },
+    "Loading": {
+      "message": "جاري التحميل..."
+    }
+  },
+  "MemberProfile": {
+    "Header": {
+      "title": "بروفايل العضو",
+      "welcome": "مرحباً {name}، تابع تقدمك وخططك",
+      "role": "عضو"
+    },
+    "Tabs": {
+      "overview": "نظرة عامة",
+      "sessions": "حصصي",
+      "plans": "خططي",
+      "progress": "تقدمي",
+      "loyalty": "نقاط الولاء",
+      "settings": "إعداداتي"
+    },
+    "Logout": {
+      "btn": "تسجيل الخروج"
+    },
+    "Language": {
+      "btn": "EN"
+    },
+    "Loading": {
+      "message": "جاري التحميل..."
+    }
+  },
+  "DashboardLayout": {
+    "Language": {
+      "btn": "EN"
+    },
+    "Logout": {
+      "btn": "تسجيل الخروج"
+    }
+  },
+  "Login": {
+    "title": "تسجيل الدخول",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "emailPlaceholder": "أدخل بريدك الإلكتروني",
+    "passwordPlaceholder": "أدخل كلمة المرور",
+    "loginBtn": "تسجيل الدخول",
+    "loggingIn": "جاري تسجيل الدخول...",
+    "noAccount": "ليس لديك حساب؟",
+    "signUp": "إنشاء حساب",
+    "fillAllFields": "يرجى ملء جميع الحقول",
+    "validEmail": "يرجى إدخال بريد إلكتروني صحيح",
+    "loginFailed": "فشل تسجيل الدخول",
+    "unexpectedError": "حدث خطأ غير متوقع",
+    "loading": "جاري التحميل..."
+  },
+ "AdminFinancialOverview":  {
+    "monthlyRevenue": "الإيرادات الشهرية",
+    "monthlyExpenses": "المصروفات الشهرية",
+    "netProfit": "الربح الصافي",
+    "fromLastMonth": "من الشهر الماضي",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "transactions": "المعاملات الأخيرة",
+      "reports": "التقارير"
+    },
+    "overviewTitle": "نظرة عامة على الماليات",
+    "revenues": "الإيرادات",
+    "expenses": "المصروفات",
+    "monthly": "شهرياً:",
+    "weekly": "أسبوعياً:",
+    "daily": "يومياً:",
+    "recentTransactions": "المعاملات الأخيرة",
+    "categories": {
+      "subscriptions": "اشتراكات",
+      "equipment": "معدات",
+      "personal_training": "تدريب شخصي",
+      "utilities": "مرافق",
+      "supplements": "مكملات غذائية",
+      "payroll": "رواتب",
+      "maintenance": "صيانة"
+    },
+    "reportsTitle": "التقارير المالية",
+    "reports": {
+      "revenue": "تقرير الإيرادات",
+      "revenueDesc": "تقرير مفصل عن الإيرادات",
+      "expenses": "تقرير المصروفات",
+      "expensesDesc": "تقرير مفصل عن المصروفات",
+      "profit": "تقرير الأرباح",
+      "profitDesc": "تقرير مفصل عن الأرباح",
+      "general": "تقرير شامل",
+      "generalDesc": "تقرير شامل عن الماليات"
+    },
+  "transactionDescriptions": {
+    "membershipPayment": "دفعة شهرية من الأعضاء",
+    "equipmentPurchase": "شراء معدات رياضية",
+    "personalTraining": "حصة شخصية - أحمد محمد",
+    "utilitiesBill": "فاتورة كهرباء",
+    "supplementsSale": "بيع مكملات غذائية"
+   }
+  },
+  "AdminPlansOverview": {
+      "title": "إدارة الخطط - الإدارة",
+      "totalRevenue": "إجمالي الإيرادات",
+      "addNewPlan": "إضافة خطة جديدة",
+      "exportData": "تصدير البيانات",
+      "tabs": {
+        "workout": "خطط التمرين",
+        "diet": "الخطط الغذائية"
+      },
+      "types": {
+        "weight_loss": "تخسيس",
+        "muscle_gain": "بناء عضلات",
+        "general_fitness": "لياقة عامة",
+        "general_health": "صحة عامة"
+      },
+      "difficulties": {
+        "beginner": "مبتدئ",
+        "intermediate": "متوسط",
+        "advanced": "متقدم"
+      },
+      "statuses": {
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "draft": "مسودة"
+      },
+      "labels": {
+        "type": "النوع:",
+        "difficulty": "المستوى:",
+        "duration": "المدة:",
+        "exercises": "التمارين:",
+        "calories": "السعرات:",
+        "meals": "الوجبات:",
+        "members": "الأعضاء:",
+        "createdBy": "المنشئ:",
+        "revenue": "الإيرادات:"
+      },
+      "exerciseUnit": "تمرين",
+      "calorieUnit": "سعرة",
+      "mealUnit": "وجبة",
+      "memberUnit": "عضو",
+      "viewDetails": "عرض التفاصيل",
+      "edit": "تعديل",
+      "workoutPlans": {
+        "plan1": { "name": "خطة التخسيس للمبتدئين", "duration": "8 أسابيع" },
+        "plan2": { "name": "خطة بناء العضلات", "duration": "12 أسبوع" },
+        "plan3": { "name": "خطة اللياقة العامة", "duration": "6 أسابيع" }
+      },
+      "dietPlans": {
+        "plan1": { "name": "خطة التخسيس الغذائية" },
+        "plan2": { "name": "خطة بناء العضلات الغذائية" },
+        "plan3": { "name": "خطة الصحة العامة" }
+      }
+    }
+  }
+  
+  

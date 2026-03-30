@@ -1,0 +1,262 @@
+{
+  "Home": {
+    "title": "Welcome to our store!",
+    "welcome": "We are glad to have you here. Enjoy browsing our products!"
+  },
+  "Navigation": {
+    "home": "Home",
+    "services": "Services",
+    "pricing": "Pricing",
+    "trainers": "Trainers",
+    "contact": "Contact",
+    "login": "Login",
+    "register": "Register",
+    "language": "عربي"
+  },
+  "CalculatorsSection": {
+    "title": "Fitness Calculators",
+    "subtitle": "Calculate your health and fitness metrics",
+    "bmi": "BMI Calculator",
+    "bodyFat": "Body Fat Calculator",
+    "calories": "Calories Calculator",
+    "protein": "Protein Calculator",
+    "water": "Water Calculator",
+    "workout": "Workout Recommendations",
+    "clickToOpen": "Click to open {name} "
+  },
+  "AdminDashboard": {
+    "Header": {
+      "title": "Admin Dashboard",
+      "welcome": "Welcome {name}, full management for all gym operations",
+      "role": "Admin"
+    },
+    "Tabs": {
+      "overview": "Overview",
+      "users": "User Management", 
+      "sessions": "Sessions",
+      "plans": "Plans",
+      "financial": "Financial",
+      "reports": "Reports",
+      "settings": "Settings"
+    },
+    "Stats": {
+      "totalMembers": "Total Members",
+      "activeTrainers": "Active Trainers",
+      "dailySessions": "Daily Sessions",
+      "monthlyRevenue": "Monthly Revenue",
+      "monthlyExpenses": "Monthly Expenses",
+      "netProfit": "Net Profit",
+      "loyaltyPoints": "Loyalty Points Distributed",
+      "newReviews": "New Reviews",
+      "sinceLastMonth": "since last month"
+    },
+    "Logout": {
+      "btn": "Logout"
+    },
+    "Language": {
+      "btn": "عربي"
+    },
+    "Loading": {
+      "message": "Loading..."
+    },
+    "Unauthorized": {
+      "message": "You are not authorized to access this page."
+    }
+  },
+  "ManagerDashboard": {
+    "Header": {
+      "title": "Manager Dashboard",
+      "welcome": "Welcome {name}, comprehensive management for all gym operations",
+      "role": "Manager"
+    },
+    "Tabs": {
+      "overview": "Overview",
+      "users": "User Management",
+      "sessions": "Sessions",
+      "plans": "Plans",
+      "reports": "Reports",
+      "settings": "Settings"
+    },
+    "Logout": {
+      "btn": "Logout"
+    },
+    "Language": {
+      "btn": "عربي"
+    },
+    "Loading": {
+      "message": "Loading..."
+    }
+  },
+  "TrainerDashboard": {
+    "Header": {
+      "title": "Trainer Dashboard",
+      "welcome": "Welcome {name}, manage your sessions and clients",
+      "role": "Trainer"
+    },
+    "Tabs": {
+      "overview": "Overview",
+      "sessions": "My Sessions",
+      "clients": "My Clients",
+      "plans": "My Plans",
+      "progress": "Progress",
+      "schedule": "Schedule"
+    },
+    "Logout": {
+      "btn": "Logout"
+    },
+    "Language": {
+      "btn": "عربي"
+    },
+    "Loading": {
+      "message": "Loading..."
+    }
+  },
+  "MemberProfile": {
+    "Header": {
+      "title": "Member Profile",
+      "welcome": "Welcome {name}, track your progress and plans",
+      "role": "Member"
+    },
+    "Tabs": {
+      "overview": "Overview",
+      "sessions": "My Sessions",
+      "plans": "My Plans",
+      "progress": "My Progress",
+      "loyalty": "Loyalty Points",
+      "settings": "My Settings"
+    },
+    "Logout": {
+      "btn": "Logout"
+    },
+    "Language": {
+      "btn": "عربي"
+    },
+    "Loading": {
+      "message": "Loading..."
+    }
+  },
+  "DashboardLayout": {
+    "Language": {
+      "btn": "عربي"
+    },
+    "Logout": {
+      "btn": "Logout"
+    }
+  },
+  "Login": {
+    "title": "Login",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password",
+    "loginBtn": "Login",
+    "loggingIn": "Logging in...",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "fillAllFields": "Please fill in all fields",
+    "validEmail": "Please enter a valid email address",
+    "loginFailed": "Login failed",
+    "unexpectedError": "An unexpected error occurred",
+    "loading": "Loading..."
+  },
+  "AdminFinancialOverview": {
+    "monthlyRevenue": "Monthly Revenue",
+    "monthlyExpenses": "Monthly Expenses",
+    "netProfit": "Net Profit",
+    "fromLastMonth": "from last month",
+    "tabs": {
+      "overview": "Overview",
+      "transactions": "Recent Transactions",
+      "reports": "Reports"
+    },
+    "overviewTitle": "Financial Overview",
+    "revenues": "Revenues",
+    "expenses": "Expenses",
+    "monthly": "Monthly:",
+    "weekly": "Weekly:",
+    "daily": "Daily:",
+    "recentTransactions": "Recent Transactions",
+    "categories": {
+      "subscriptions": "Subscriptions",
+      "equipment": "Equipment",
+      "personal_training": "Personal Training",
+      "utilities": "Utilities",
+      "supplements": "Supplements",
+      "payroll": "Payroll",
+      "maintenance": "Maintenance"
+    },
+    "reportsTitle": "Financial Reports",
+    "reports": {
+      "revenue": "Revenue Report",
+      "revenueDesc": "Detailed report about revenues",
+      "expenses": "Expenses Report",
+      "expensesDesc": "Detailed report about expenses",
+      "profit": "Profit Report",
+      "profitDesc": "Detailed report about profits",
+      "general": "General Report",
+      "generalDesc": "Comprehensive financial report"
+    },
+    "transactionDescriptions": {
+      "membershipPayment": "Monthly membership payment",
+      "equipmentPurchase": "Equipment purchase",
+      "personalTraining": "Personal training - Ahmed Mohamed",
+      "utilitiesBill": "Electricity bill",
+      "supplementsSale": "Supplements sale"
+    }
+
+  },
+  "AdminPlansOverview": {
+    "title": "Plans Management - Admin",
+    "totalRevenue": "Total Revenue",
+    "addNewPlan": "Add New Plan",
+    "exportData": "Export Data",
+    "tabs": {
+      "workout": "Workout Plans",
+      "diet": "Diet Plans"
+    },
+    "types": {
+      "weight_loss": "Weight Loss",
+      "muscle_gain": "Muscle Gain",
+      "general_fitness": "General Fitness",
+      "general_health": "General Health"
+    },
+    "difficulties": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "statuses": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "draft": "Draft"
+    },
+    "labels": {
+      "type": "Type:",
+      "difficulty": "Difficulty:",
+      "duration": "Duration:",
+      "exercises": "Exercises:",
+      "calories": "Calories:",
+      "meals": "Meals:",
+      "members": "Members:",
+      "createdBy": "Created By:",
+      "revenue": "Revenue:"
+    },
+    "exerciseUnit": "exercise",
+    "calorieUnit": "cal",
+    "mealUnit": "meal",
+    "memberUnit": "member",
+    "viewDetails": "View Details",
+    "edit": "Edit",
+    "workoutPlans": {
+      "plan1": { "name": "Beginner Weight Loss Plan", "duration": "8 weeks" },
+      "plan2": { "name": "Muscle Gain Plan", "duration": "12 weeks" },
+      "plan3": { "name": "General Fitness Plan", "duration": "6 weeks" }
+    },
+    "dietPlans": {
+      "plan1": { "name": "Weight Loss Diet Plan" },
+      "plan2": { "name": "Muscle Gain Diet Plan" },
+      "plan3": { "name": "General Health Plan" }
+    }
+  }
+  
+} 
