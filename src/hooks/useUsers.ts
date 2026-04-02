@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { UserService, CreateUserPayload } from '@/services/userService';
-import type { User } from '@/types';
+import type { User } from '@/types/models';
 
 export function useUsers() {
   const service = useMemo(() => new UserService(), []);

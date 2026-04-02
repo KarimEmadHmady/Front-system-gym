@@ -24,6 +24,7 @@ import AdminMessages from '@/components/admin/AdminMessages';
 import AdminProgress from '@/components/admin/AdminProgress';
 import AdminFeedback from '@/components/admin/AdminFeedback';
 import AdminLoyalty from '@/components/admin/AdminLoyalty';
+import AdminWhatsAppNotifications from '@/components/admin/WhatsAppNotifications';
 import AdminMembershipCards from '@/components/admin/AdminMembershipCards';
 import AdminSearch from '@/components/admin/AdminSearch';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
@@ -95,6 +96,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
     { id: 'payments', name: 'مدفوعات', icon: '💵' },
     { id: 'purchases', name: 'مشتريات', icon: '🛒' },
     { id: 'messages', name: 'رسائل', icon: '✉️' },
+    { id: 'whatsapp', name: 'WhatsApp', icon: '📱' },
     { id: 'progress', name: 'تقدم العملاء', icon: '📈' },
     { id: 'feedback', name: 'التقييمات', icon: '⭐' },
     { id: 'loyalty', name: 'نقاط الولاء', icon: '🎁' },
@@ -308,6 +310,12 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
         {activeTab === 'messages' && (
           <div className="space-y-8">
             <AdminMessages />
+          </div>
+        )}
+
+        {activeTab === 'whatsapp' && (
+          <div className="space-y-8">
+            <AdminWhatsAppNotifications />
           </div>
         )}
 
