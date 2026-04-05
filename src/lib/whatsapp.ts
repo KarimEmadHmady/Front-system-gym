@@ -135,7 +135,7 @@ export function replaceVariables(message: string, variables: Record<string, stri
 export function previewMessage(message: string): string {
   const sampleVariables: Record<string, string> = {
     name: 'أحمد محمد',
-    planName: 'الباقة الذهبية',
+    planName: 'باقة برو',
     endDate: '31/12/2026',
     discount: '20',
     className: 'كمال أجسام',

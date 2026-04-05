@@ -10,6 +10,7 @@ import { getAuthToken } from "@/lib/api";
 import { UserService } from "@/services/userService";
 import VideoTutorial from "../VideoTutorial";
 import { useGymBranding } from "@/contexts/GymBrandingContext";
+import { BackupManager } from "./BackupManager";
 
 // FileInput component for image uploads
 const FileInput = ({
@@ -460,6 +461,11 @@ if (currentPassword || newPassword || confirmNewPassword) {
         {/* إعدادات تحذيرات الاشتراكات */}
         <div className="mt-8">
           <SubscriptionAlertSettings />
+        </div>
+
+        {/* مدير النسخ الاحتياطي */}
+        <div className="mt-8">
+          <BackupManager />
         </div>
       </div>
     </div>

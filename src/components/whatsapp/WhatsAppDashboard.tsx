@@ -320,12 +320,14 @@ const styles = `
 
   /* Notifications */
   .wad-notification {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 12px 16px;
     border-radius: 8px;
-    margin-bottom: 16px;
+    margin-top: 16px;
     font-size: 14px;
     font-weight: 500;
-    text-align: center;
     animation: slideIn 0.3s ease-out;
   }
   .wad-notification.success {
@@ -342,6 +344,38 @@ const styles = `
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
     color: #3b82f6;
+  }
+  .wad-notification-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    flex: 1;
+  }
+  .wad-notification-text {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .wad-notification-count {
+    font-size: 12px;
+    opacity: 0.8;
+    font-weight: 500;
+  }
+  .wad-notification-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+  }
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* Data Display */
@@ -600,25 +634,63 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const { isConnected, mockMode } = useWhatsAppStatus();
   const { sendExpiringNotifications, triggerExpiryCheck, runAutoExpiryCheck, loading } = useWhatsAppActions();
-  const { isRunning } = useAutoStatus();
+  const { isRunning, lastCheck } = useAutoStatus();
   const { currentMessage } = useExpiryMessage();
   const [expiryLoading, setExpiryLoading] = useState(false);
   const [expiryNotification, setExpiryNotification] = useState<string | null>(null);
   const [expiryData, setExpiryData] = useState<any>(null);
+  const [expirySuccess, setExpirySuccess] = useState<boolean | null>(null);
+  const [sentCount, setSentCount] = useState<number | null>(null);
   const [useQueue, setUseQueue] = useState(true); // New state for queue option
+
+  // Determine if auto system is active - either running directly or queue is enabled (which is the normal state)
+  const isAutoSystemActive = isRunning || useQueue;
 
   const handleSendExpiring = async () => {
     try { 
       setExpiryLoading(true);
       setExpiryNotification('جاري إرسال إشعارات انتهاء الاشتراك...');
-      await sendExpiringNotifications({ message: currentMessage });
-      setExpiryNotification('تم إرسال الإشعارات بنجاح!');
-      setTimeout(() => setExpiryNotification(null), 3000);
-    }
-    catch (e) { 
+      setExpirySuccess(null);
+      setSentCount(null);
+      
+      const response = await sendExpiringNotifications({ message: currentMessage });
+      
+      // Extract success info from response
+      if (response?.success) {
+        const sent = response.data?.sent || response.sent || 0;
+        const failed = response.data?.failed || response.failed || 0;
+        const total = response.data?.total || response.total || sent + failed;
+        
+        setExpirySuccess(true);
+        setSentCount(sent);
+        setExpiryNotification(
+          sent > 0 
+            ? `✅ تم إرسال ${sent} رسالة بنجاح${failed > 0 ? ` (${failed} فشلت)` : ''}` 
+            : '⚠️ لم يتم إرسال أي رسائل'
+        );
+      } else {
+        setExpirySuccess(false);
+        setExpiryNotification('❌ فشل إرسال الإشعارات');
+      }
+      
+      // Trigger auto-refresh in queue status
+      window.dispatchEvent(new CustomEvent('whatsapp-expiry-action', {
+        detail: { action: 'send-expiring' }
+      }));
+      
+      setTimeout(() => {
+        setExpiryNotification(null);
+        setExpirySuccess(null);
+        setSentCount(null);
+      }, 5000);
+    } catch (e) { 
       console.error(e); 
-      setExpiryNotification('فشل إرسال الإشعارات');
-      setTimeout(() => setExpiryNotification(null), 3000);
+      setExpirySuccess(false);
+      setExpiryNotification('❌ فشل إرسال الإشعارات');
+      setTimeout(() => {
+        setExpiryNotification(null);
+        setExpirySuccess(null);
+      }, 3000);
     } finally {
       setExpiryLoading(false);
     }
@@ -636,22 +708,18 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
       });
       
       setExpiryData(response);
+      setExpiryNotification('تم تشغيل الفحص التلقائي بنجاح!');
       
-      // Handle different response types
-      if ('queueStatus' in response) {
-        // Queue Response
-        setExpiryNotification('✅ تم إضافة الفحص إلى طابور المعالجة!');
-      } else if ('data' in response) {
-        // Direct Response
-        setExpiryNotification(`✅ تم إرسال ${response.data.sent} من ${response.data.total} رسالة`);
-      }
+      // Trigger auto-refresh in queue status
+      window.dispatchEvent(new CustomEvent('whatsapp-expiry-action', {
+        detail: { action: 'auto-check' }
+      }));
       
       setTimeout(() => {
         setExpiryNotification(null);
         setExpiryData(null);
-      }, 5000);
-    }
-    catch (e) { 
+      }, 3000);
+    } catch (e) { 
       console.error(e); 
       setExpiryNotification('❌ فشل تشغيل الفحص');
       setTimeout(() => setExpiryNotification(null), 3000);
@@ -862,11 +930,14 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
                 <p className="wad-expiry-title">رسالة انتهاء الاشتراك الحالية</p>
                 <div className="wad-msg-preview">{currentMessage}</div>
                 <div className="wad-status-info">
-                  <span className={`wad-status-pill ${isRunning ? 'active' : 'inactive'}`}>
-                    <span className={`wad-status-dot ${isRunning ? 'pulse' : ''}`} />
-                    {isRunning ? 'نشط' : 'غير نشط'}
+                  <span className={`wad-status-pill ${isAutoSystemActive ? 'active' : 'inactive'}`}>
+                    <span className={`wad-status-dot ${isAutoSystemActive ? 'pulse' : ''}`} />
+                    {isAutoSystemActive ? 'نشط' : 'غير نشط'}
                   </span>
-                  <p>النظام التلقائي لإرسال الإشعارات</p>
+                  <p>
+                    النظام التلقائي لإرسال الإشعارات
+                    {useQueue && <span style={{ color: '#25d366', fontSize: '12px' }}> (طابور)</span>}
+                  </p>
                 </div>
               </div>
               <div className="wad-expiry-card">
@@ -880,11 +951,32 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
                     <RefreshCw size={15} />
                     تشغيل الفحص التلقائي
                   </button>
-                  <button className="wad-action-btn outline" disabled={!isConnected}>
+                  <button 
+                    className="wad-action-btn outline" 
+                    onClick={() => setActiveTab('settings')}
+                    disabled={!isConnected}
+                  >
                     <Settings size={15} />
                     تعديل الرسالة الافتراضية
                   </button>
                 </div>
+                
+                {/* Notification Feedback */}
+                {expiryNotification && (
+                  <div className={`wad-notification ${expirySuccess === true ? 'success' : expirySuccess === false ? 'error' : 'info'}`}>
+                    <div className="wad-notification-content">
+                      <span className="wad-notification-text">{expiryNotification}</span>
+                      {sentCount !== null && sentCount > 0 && (
+                        <span className="wad-notification-count">{sentCount} رسالة</span>
+                      )}
+                    </div>
+                    {expiryLoading && (
+                      <div className="wad-notification-spinner">
+                        <RefreshCw size={14} className="animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

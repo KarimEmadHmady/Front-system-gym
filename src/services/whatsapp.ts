@@ -29,7 +29,7 @@ class WhatsAppService {
 
   // 1. POST /api/notify/send-single - إرسال رسالة فردية
   async sendSingleMessage(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/send-single`, {
+    const response = await fetch(`${BASE_URL}/single`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -39,7 +39,7 @@ class WhatsAppService {
 
   // 2. POST /api/notify/send-broadcast - إرسال رسالة عامة
   async sendBroadcast(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/send-broadcast`, {
+    const response = await fetch(`${BASE_URL}/broadcast`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -47,13 +47,19 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 3. POST /api/notify/send-expiring - إرسال إشعارات انتهاء الاشتراك
+  // 3. POST /api/notify/auto/expiring - إرسال إشعارات انتهاء الاشتراك
   async sendExpiringNotifications(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/send-expiring`, {
+    const response = await fetch(`${BASE_URL}/expiring`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
     return await response.json();
   }
 
@@ -103,7 +109,17 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 8. GET /api/notify/auto/status - حالة النظام التلقائي
+  // 8. POST /api/notify/auto/reset-expiry-message - إعادة تعيين رسالة الانتهاء إلى الافتراضية
+  async resetExpiryMessage(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/auto/reset-expiry-message`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+    return await response.json();
+  }
+
+  // 9. GET /api/notify/auto/status - حالة النظام التلقائي
   async getAutoStatus(): Promise<AutoStatusResponse> {
     const response = await fetch(`${BASE_URL}/auto/status`, {
       headers: this.getAuthHeaders(),
@@ -111,7 +127,7 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 9. POST /api/notify/clear-session - مسح جلسة WhatsApp
+  // 10. POST /api/notify/clear-session - مسح جلسة WhatsApp
   async clearSession(): Promise<any> {
     const response = await fetch(`${BASE_URL}/clear-session`, {
       method: 'POST',
@@ -120,7 +136,7 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 10. GET /api/notify/qr - جلب QR Code
+  // 11. GET /api/notify/qr - جلب QR Code
   async getQRCode(): Promise<QRCodeResponse> {
     const response = await fetch(`${BASE_URL}/qr`, {
       headers: this.getAuthHeaders(),
@@ -128,7 +144,7 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 11. GET /api/notify/queue-status - حالة الـ Queue
+  // 12. GET /api/notify/queue-status - حالة الـ Queue
   async getQueueStatus(): Promise<any> {
     const response = await fetch(`${BASE_URL}/queue-status`, {
       headers: this.getAuthHeaders(),
@@ -136,13 +152,19 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 12. PUT /api/notify/queue-limit - تحديث حد الطابور
+  // 13. PUT /api/notify/rate-limit - تحديث حد الطابور
   async updateQueueLimit(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/queue-limit`, {
+    const response = await fetch(`${BASE_URL}/rate-limit`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
     });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
     return await response.json();
   }
 

@@ -7,20 +7,21 @@ interface ExpiryMessageEditorProps {
 
 const VARIABLES = [
   { key: '{name}',     label: 'اسم العضو',       example: 'أحمد محمد',       color: '#25d366' },
-  { key: '{planName}', label: 'اسم الباقة',       example: 'الباقة الذهبية',  color: '#f59e0b' },
+  { key: '{planName}', label: 'اسم الباقة',       example: 'باقة برو',  color: '#f59e0b' },
   { key: '{endDate}',  label: 'تاريخ الانتهاء',   example: '31/12/2025',      color: '#3b82f6' },
 ];
 
 function replaceVars(template: string) {
   return template
     .replace(/{name}/g,     'أحمد محمد')
-    .replace(/{planName}/g, 'الباقة الذهبية')
+    .replace(/{planName}/g, 'باقة برو')
     .replace(/{endDate}/g,  '31/12/2025');
 }
 
 export function ExpiryMessageEditor({ className }: ExpiryMessageEditorProps) {
   const {
     updateExpiryMessage,
+    resetExpiryMessage,
     currentMessage,
     isDefault,
     loading: hookLoading,
@@ -50,6 +51,22 @@ export function ExpiryMessageEditor({ className }: ExpiryMessageEditorProps) {
         showToast('success', 'تم حفظ الرسالة بنجاح ✓');
       } else {
         showToast('error', 'فشل الحفظ — حاول مجدداً');
+      }
+    } catch {
+      showToast('error', 'حدث خطأ غير متوقع');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      setSaving(true);
+      const res = await resetExpiryMessage();
+      if (res?.success) {
+        showToast('success', 'تم إعادة تعيين الرسالة إلى الافتراضية ✓');
+      } else {
+        showToast('error', 'فشل إعادة التعيين — حاول مجدداً');
       }
     } catch {
       showToast('error', 'حدث خطأ غير متوقع');
@@ -295,6 +312,31 @@ export function ExpiryMessageEditor({ className }: ExpiryMessageEditorProps) {
           color: rgba(255,255,255,0.25);
         }
         .eme-footer-hint.dirty { color: rgba(245,158,11,0.7); }
+        .eme-footer-buttons {
+          display: flex;
+          gap: 10px;
+        }
+        .eme-reset-btn {
+          padding: 9px 16px;
+          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: transparent;
+          color: rgba(255,255,255,0.6);
+          font-size: 12px;
+          font-weight: 600;
+          font-family: 'Cairo', sans-serif;
+          cursor: pointer;
+          transition: all .2s;
+        }
+        .eme-reset-btn:hover:not(:disabled) {
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.8);
+          border-color: rgba(255,255,255,0.25);
+        }
+        .eme-reset-btn:disabled {
+          opacity: .35;
+          cursor: not-allowed;
+        }
         .eme-save-btn {
           padding: 9px 22px;
           border-radius: 10px;
@@ -397,13 +439,23 @@ export function ExpiryMessageEditor({ className }: ExpiryMessageEditorProps) {
           <span className={`eme-footer-hint ${isDirty ? 'dirty' : ''}`}>
             {isDirty ? '● يوجد تغييرات غير محفوظة' : 'لا توجد تغييرات'}
           </span>
-          <button
-            className="eme-save-btn"
-            onClick={handleSave}
-            disabled={isLoading || !isDirty || !draft.trim()}
-          >
-            {isLoading ? 'جاري الحفظ...' : 'حفظ الرسالة'}
-          </button>
+          <div className="eme-footer-buttons">
+            <button
+              className="eme-reset-btn"
+              onClick={handleReset}
+              disabled={isLoading || isDefault}
+              title={isDefault ? 'الرسالة حالياً افتراضية' : 'إعادة تعيين إلى الرسالة الافتراضية'}
+            >
+              {isLoading ? 'جاري...' : 'إعادة تعيين'}
+            </button>
+            <button
+              className="eme-save-btn"
+              onClick={handleSave}
+              disabled={isLoading || !isDirty || !draft.trim()}
+            >
+              {isLoading ? 'جاري الحفظ...' : 'حفظ الرسالة'}
+            </button>
+          </div>
         </div>
 
       </div>

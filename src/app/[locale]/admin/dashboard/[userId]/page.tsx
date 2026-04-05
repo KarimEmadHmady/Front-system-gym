@@ -32,6 +32,7 @@ import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlertIndi
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlertBadge';
 import SubscriptionAlertsSummary from '@/components/admin/SubscriptionAlertsSummary';
 import SoundManager from '@/components/admin/SoundManager';
+import { AutoBackupManager } from '@/components/admin/AutoBackupManager';
 import DashboardSidebar from '@/components/ui/DashboardSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
@@ -356,6 +357,9 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
           </div>
         )}
       </div>
+      
+      {/* Auto Backup Manager - Global */}
+      <AutoBackupManager onOpenSettings={() => setActiveTab('settings')} />
     </div>
   );
 };

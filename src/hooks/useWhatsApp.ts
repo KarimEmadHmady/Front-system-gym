@@ -5,11 +5,6 @@ import {
   QueueStatusResponse,
   AutoStatusResponse,
   TriggerExpiryCheckRequest,
-  TriggerExpiryCheckResponse,
-  AutoCheckExpiryRequest,
-  AutoCheckExpiryResponse,
-  ExpiryMessageUpdate,
-  ExpiryMessageUpdateResponse,
   ExpiryMessageResponse,
   QRCodeResponse
 } from '@/types/whatsapp';
@@ -355,6 +350,24 @@ export function useExpiryMessage() {
     }
   }, [fetchExpiryMessage]);
 
+  const resetExpiryMessage = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await whatsappService.resetExpiryMessage();
+      
+      // After reset, refetch the current message to get the updated state
+      await fetchExpiryMessage();
+      
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset expiry message');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchExpiryMessage]);
+
   useEffect(() => {
     fetchExpiryMessage();
   }, [fetchExpiryMessage]);
@@ -365,6 +378,7 @@ export function useExpiryMessage() {
     error,
     refetch: fetchExpiryMessage,
     updateExpiryMessage,
+    resetExpiryMessage,
     currentMessage: expiryMessage?.data.message || '',
     isDefault: expiryMessage?.data.isDefault || false,
   };
@@ -574,7 +588,7 @@ export function useWhatsAppActions() {
     sendSingleMessage,
     sendBroadcast,
     sendExpiringNotifications,
-    triggerExpiryCheck,    // ← Added this
+    triggerExpiryCheck,    
     runAutoExpiryCheck,
     updateRateLimit
   };
