@@ -38,6 +38,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
 import VideoTutorial from '@/components/VideoTutorial';
 
+import { FeatureGate } from "@/components/ui/FeatureGate";
+import { FeatureBanner } from "@/components/ui/FeatureBanner";
+
 
 const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => {
   const resolvedParams = use(params);
@@ -77,7 +80,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
   }, [searchParams, activeTab]);
 
   if (isLoading) {
-    return <LoadingSpinner  />;
+    return <LoadingSpinner />;
   }
 
   if (!isAuthenticated || user?.role !== 'admin') {
@@ -123,7 +126,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
 
   return (
     <div className="min-h-screen theme-gradient-bg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-            {/* Sidebar */}
+      {/* Sidebar */}
       <DashboardSidebar
         tabs={tabs}
         activeTab={activeTab}
@@ -135,7 +138,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:py-6 space-y-3 sm:space-y-0 mr-0 sm:mr-10 xl:mr-0">
-          <div className="w-full sm:w-auto text-center sm:text-left">
+            <div className="w-full sm:w-auto text-center sm:text-left">
               <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 لوحة تحكم المدير
               </h1>
@@ -144,33 +147,33 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
               </p>
             </div>
             <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto space-x-3 sm:space-x-4">
-            <div className="flex flex-row sm:flex-row items-center space-x-3">
-            <div className="text-center">
-                <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
-                  {user?.name}
-                </p>
-                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
-                إدارة
+              <div className="flex flex-row sm:flex-row items-center space-x-3">
+                <div className="text-center">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                    {user?.name}
+                  </p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                    إدارة
 
-                </p>
+                  </p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {user?.name?.charAt(0)?.toUpperCase()}
+                </div>
               </div>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.name?.charAt(0)?.toUpperCase()}
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <ThemeToggleButton />
-            <button
-                onClick={logout}
-                aria-label="تسجيل الخروج"
-                className="bg-red-600 hover:bg-red-700 text-white p-2 sm:px-4 sm:py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-0 sm:space-x-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span className="hidden sm:inline">تسجيل الخروج</span>
-              </button>
- {/*              <button
+              <div className="flex items-center space-x-3">
+                <ThemeToggleButton />
+                <button
+                  onClick={logout}
+                  aria-label="تسجيل الخروج"
+                  className="bg-red-600 hover:bg-red-700 text-white p-2 sm:px-4 sm:py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-0 sm:space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="hidden sm:inline">تسجيل الخروج</span>
+                </button>
+                {/*              <button
                 onClick={handleLocaleSwitch}
                 aria-label="تغيير اللغة"
                 className="bg-gray-600 hover:bg-gray-700 text-white p-2 sm:px-4 sm:py-2 rounded-md text-sm font-medium transition-colors ml-0 sm:ml-2"
@@ -180,7 +183,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
                 </svg>
                 <span className="hidden sm:inline">تغيير اللغة</span>
               </button> */}
-            </div>
+              </div>
 
 
             </div>
@@ -196,11 +199,10 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap mb-4 ${
-                  activeTab === tab.id
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap mb-4 ${activeTab === tab.id
                     ? 'border-red-500 text-red-600 dark:text-red-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
+                  }`}
               >
                 <span className="mr-2">{tab.icon}</span>
                 {tab.name}
@@ -213,151 +215,159 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
 
       {/* Subscription Alert Indicator (global, fetch-once) */}
       <SubscriptionAlertIndicator />
-      
+
       {/* Sound Manager */}
       <SoundManager activeTab={activeTab} />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Cards */}
-            <AdminStatsCards />
-            
-            {/* Quick Actions */}
-            <AdminQuickActions />
-            
-            {/* Recent Activity */}
-            <AdminRecentActivity />
-          </div>
-        )}
+{/* Main Content */}
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {activeTab === 'overview' && (
+    <div className="space-y-8">
+      <AdminStatsCards />
+      <AdminQuickActions />
+      <AdminRecentActivity />
+    </div>
+  )}
 
-        {activeTab === 'users' && (
-          <div className="space-y-8">
-            <SubscriptionAlertsSummary />
-            <AdminUsersTable />
-          </div>
-        )}
-
-        {activeTab === 'trainers' && (
-          <div className="space-y-8">
-            <TrainersDirectory scope="admin" />
-          </div>
-        )}
-
-        {activeTab === 'sessions' && (
-          <div className="space-y-8">
-            <AdminSessionsOverview />
-          </div>
-        )}
-
-        {activeTab === 'plans' && (
-          <div className="space-y-8">
-            <AdminPlansOverview />
-          </div>
-        )}
-
-        {activeTab === 'financial' && (
-          <div className="space-y-8">
-            <AdminFinancialOverview />
-          </div>
-        )}
-
-        {activeTab === 'reports' && (
-          <div className="space-y-8">
-            <AdminReports />
-          </div>
-        )}
-
-        {activeTab === 'attendance' && (
-          <div className="space-y-8">
-            <AdminAttendance />
-          </div>
-        )}
-
-        {activeTab === 'attendance-scanner' && (
-          <div className="space-y-8">
-                 <VideoTutorial 
-                  videoId="ytPIb5HugAw"
-                  title=" سجيل حضور بالباركود أو الكاميرا أو الكود اليدوي" 
-                  position="bottom-right"
-                  buttonText="شرح"
-                 />
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-600 mb-4">ماسح الحضور</h2>
-              <p className="text-gray-600 mb-6">استخدم ماسح الباركود لتسجيل حضور الأعضاء</p>
-              <button
-                onClick={() => router.push(`/admin/attendance-scanner/${user?.id}`)}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg"
-              >
-                فتح ماسح الحضور
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'payments' && (
-          <div className="space-y-8">
-            <AdminPayments />
-          </div>
-        )}
-
-        {activeTab === 'purchases' && (
-          <div className="space-y-8">
-            <AdminPurchases />
-          </div>
-        )}
-
-        {activeTab === 'messages' && (
-          <div className="space-y-8">
-            <AdminMessages />
-          </div>
-        )}
-
-        {activeTab === 'whatsapp' && (
-          <div className="space-y-8">
-            <AdminWhatsAppNotifications />
-          </div>
-        )}
-
-        {activeTab === 'progress' && (
-          <div className="space-y-8">
-            <AdminProgress />
-          </div>
-        )}
-
-        {activeTab === 'feedback' && (
-          <div className="space-y-8">
-            <AdminFeedback />
-          </div>
-        )}
-
-
-        {activeTab === 'loyalty' && (
-          <div className="space-y-8">
-            <AdminLoyalty />
-          </div>
-        )}
-
-        {/* {activeTab === 'membership-cards' && (
-          <div className="space-y-8">
-            <AdminMembershipCards />
-          </div>
-        )} */}
-
-        {activeTab === 'search' && (
-          <div className="space-y-8">
-            <AdminSearch />
-          </div>
-        )}
-
-        {activeTab === 'settings' && (
-          <div className="space-y-8">
-            <AdminSettings />
-          </div>
-        )}
+  {activeTab === 'users' && (
+    <FeatureGate feature="users" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <SubscriptionAlertsSummary />
+        <AdminUsersTable />
       </div>
-      
+    </FeatureGate>
+  )}
+
+  {activeTab === 'trainers' && (
+    <div className="space-y-8">
+      <TrainersDirectory scope="admin" />
+    </div>
+  )}
+
+  {activeTab === 'sessions' && (
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminSessionsOverview />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'plans' && (
+    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminPlansOverview />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'financial' && (
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminFinancialOverview />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'reports' && (
+    <div className="space-y-8">
+      <AdminReports />
+    </div>
+  )}
+
+  {activeTab === 'attendance' && (
+    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminAttendance />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'attendance-scanner' && (
+    <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <VideoTutorial videoId="ytPIb5HugAw" title="تسجيل حضور بالباركود أو الكاميرا أو الكود اليدوي" position="bottom-right" buttonText="شرح" />
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-600 mb-4">ماسح الحضور</h2>
+          <p className="text-gray-600 mb-6">استخدم ماسح الباركود لتسجيل حضور الأعضاء</p>
+          <button onClick={() => router.push(`/admin/attendance-scanner/${user?.id}`)} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
+            فتح ماسح الحضور
+          </button>
+        </div>
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'payments' && (
+    <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminPayments />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'purchases' && (
+    <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminPurchases />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'messages' && (
+    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminMessages />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'whatsapp' && (
+    <FeatureGate feature="whatsapp" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminWhatsAppNotifications />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'progress' && (
+    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminProgress />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'feedback' && (
+    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminFeedback />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'loyalty' && (
+    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminLoyalty />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'search' && (
+    <div className="space-y-8">
+      <AdminSearch />
+    </div>
+  )}
+
+  {activeTab === 'settings' && (
+    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminSettings />
+      </div>
+    </FeatureGate>
+  )}
+</div>
+
       {/* Auto Backup Manager - Global */}
       <AutoBackupManager onOpenSettings={() => setActiveTab('settings')} />
     </div>

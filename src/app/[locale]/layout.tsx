@@ -1,11 +1,12 @@
-import {NextIntlClientProvider, hasLocale} from 'next-intl';
-import {notFound} from 'next/navigation';
-import {routing} from '@/i18n/routing';
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
+import { notFound } from 'next/navigation';
+import { routing } from '@/i18n/routing';
 import ReduxProvider from '@/redux/ReduxProvider';
 import InstallPWAButton from '@/components/InstallPWAButton';
 import { gymName } from '@/lib/gym-name';
 import { GymBrandingProvider, GymBrandingHeadSync } from '@/contexts/GymBrandingContext';
 import { fallbackLogo192, fallbackLogo512 } from '@/lib/gym-branding';
+import { FeaturesProvider } from "@/contexts/FeaturesContext";
 
 async function getMessages(locale: string) {
   try {
@@ -21,10 +22,10 @@ export default async function LocaleLayout({
   params
 }: {
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }) {
   // Ensure that the incoming `locale` is valid
-  const {locale} = await params;
+  const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
@@ -37,20 +38,22 @@ export default async function LocaleLayout({
 
   return (
     <div className="locale-layout">
-        <ReduxProvider>
-          <GymBrandingProvider>
-            <GymBrandingHeadSync />
-            <NextIntlClientProvider locale={locale} messages={messages}>
+      <ReduxProvider>
+        <GymBrandingProvider>
+          <GymBrandingHeadSync />
+          <NextIntlClientProvider locale={locale} messages={messages}>
 
-              <div className="relative z-10">
-                
+            <div className="relative z-10">
+
+              <FeaturesProvider>
                 {children}
-              </div>
-              
-              <InstallPWAButton />
-            </NextIntlClientProvider>
-          </GymBrandingProvider>
-        </ReduxProvider>
+              </FeaturesProvider>
+            </div>
+
+            <InstallPWAButton />
+          </NextIntlClientProvider>
+        </GymBrandingProvider>
+      </ReduxProvider>
     </div>
   );
 }

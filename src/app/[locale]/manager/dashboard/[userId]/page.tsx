@@ -29,10 +29,11 @@ import SubscriptionAlertsSummary from '@/components/admin/SubscriptionAlertsSumm
 import SoundManager from '@/components/admin/SoundManager';
 import dynamic from 'next/dynamic';
 import ManagerReports from '@/components/manager/ManagerReports';
-import AdminMembershipCards from '@/components/admin/AdminMembershipCards';
 import ManagerAttendanceScanner from '@/components/manager/ManagerAttendanceScanner';
 import DashboardSidebar from '@/components/ui/DashboardSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { FeatureGate } from '@/components/ui/FeatureGate';
+import { FeatureBanner } from '@/components/ui/FeatureBanner';
 const ManagerAddExpense = dynamic(() => import('@/components/manager/ManagerAddExpense'), { ssr: false });
 const ManagerAddRevenue = dynamic(() => import('@/components/manager/ManagerAddRevenue'), { ssr: false });
 
@@ -214,137 +215,147 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
       {/* Sound Manager */}
       <SoundManager activeTab={activeTab} />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Cards */}
-            <ManagerStatsCards />
-            
-            {/* Quick Actions */}
-            <ManagerQuickActions />
-            
-            {/* Recent Activity */}
-            <ManagerRecentActivity />
-          </div>
-        )}
+{/* Main Content */}
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {activeTab === 'overview' && (
+    <div className="space-y-8">
+      <ManagerStatsCards />
+      <ManagerQuickActions />
+      <ManagerRecentActivity />
+    </div>
+  )}
 
-        {activeTab === 'users' && (
-          <div className="space-y-8">
-            <SubscriptionAlertsSummary />
-            <ManagerUsersTable />
-          </div>
-        )}
-
-        {activeTab === 'trainers' && (
-          <div className="space-y-8">
-            <TrainersDirectory scope="manager" />
-          </div>
-        )}
-
-        {activeTab === 'sessions' && (
-          <div className="space-y-8">
-            <AdminSessionsOverview />
-          </div>
-        )}
-
-        {activeTab === 'plans' && (
-          <div className="space-y-8">
-            <AdminPlansOverview />
-          </div>
-        )}
-
-        {activeTab === 'reports' && (
-          <ManagerReports />
-        )}
-
-        {activeTab === 'attendance' && (
-          <div className="space-y-8">
-            <AdminAttendance />
-          </div>
-        )}
-
-        {activeTab === 'attendance-log' && (
-          <div className="space-y-8">
-            <ManagerAttendanceScanner params={{ userId: user!.id }} />
-          </div>
-        )}
-
-        {/* {activeTab === 'membership-cards' && (
-          <div className="space-y-8">
-            <AdminMembershipCards />
-          </div>
-        )} */}
-
-
-        {activeTab === 'payments' && (
-          <div className="space-y-8">
-            <AdminPayments />
-          </div>
-        )}
-
-        {activeTab === 'invoices' && (
-          <div className="space-y-8">
-            <ManagerInvoices />
-          </div>
-        )}
-
-      {activeTab === 'add-expense' && (
-          <div className="space-y-8">
-            <ManagerAddExpense />
-          </div>
-        )}
-
-        {activeTab === 'add-revenue' && (
-          <div className="space-y-8">
-            <ManagerAddRevenue />
-          </div>
-        )}
-
-        {activeTab === 'purchases' && (
-          <div className="space-y-8">
-            <AdminPurchases />
-          </div>
-        )}
-
-        {activeTab === 'messages' && (
-          <div className="space-y-8">
-            <AdminMessages />
-          </div>
-        )}
-
-        {activeTab === 'progress' && (
-          <div className="space-y-8">
-            <AdminProgress />
-          </div>
-        )}
-
-        {activeTab === 'feedback' && (
-          <div className="space-y-8">
-            <ManagerFeedback />
-          </div>
-        )}
-
-        {activeTab === 'loyalty' && (
-          <div className="space-y-8">
-            <AdminLoyalty />
-          </div>
-        )}
-
-        {/* {activeTab === 'search' && (
-          <div className="space-y-8">
-            <AdminSearch />
-          </div>
-        )} */}
-
-        {activeTab === 'settings' && (
-          <div className="space-y-8">
-            <ManagerSettings />
-          </div>
-        )}
-
-
+  {activeTab === 'users' && (
+    <FeatureGate feature="users" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <SubscriptionAlertsSummary />
+        <ManagerUsersTable />
       </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'trainers' && (
+    <div className="space-y-8">
+      <TrainersDirectory scope="manager" />
+    </div>
+  )}
+
+  {activeTab === 'sessions' && (
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminSessionsOverview />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'plans' && (
+    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminPlansOverview />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'reports' && (
+    <ManagerReports />
+  )}
+
+  {activeTab === 'attendance' && (
+    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminAttendance />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'attendance-log' && (
+    <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <ManagerAttendanceScanner params={{ userId: user!.id }} />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'payments' && (
+    <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminPayments />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'invoices' && (
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <ManagerInvoices />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'add-expense' && (
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <ManagerAddExpense />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'add-revenue' && (
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <ManagerAddRevenue />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'purchases' && (
+    <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminPurchases />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'messages' && (
+    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminMessages />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'progress' && (
+    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminProgress />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'feedback' && (
+    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <ManagerFeedback />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'loyalty' && (
+    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <AdminLoyalty />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'settings' && (
+    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <ManagerSettings />
+      </div>
+    </FeatureGate>
+  )}
+</div>
     </div>
   );
 };

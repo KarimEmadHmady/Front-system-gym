@@ -24,6 +24,8 @@ import TrainerScheduledList from '@/components/trainer/TrainerScheduledList';
 import DashboardSidebar from '@/components/ui/DashboardSidebar';
 import { messageService } from '@/services';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { FeatureGate } from '@/components/ui/FeatureGate';
+import { FeatureBanner } from '@/components/ui/FeatureBanner';
 
 const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) => {
   const resolvedParams = use(params);
@@ -234,99 +236,97 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Cards */}
-            <TrainerStatsCards />
-            
-            {/* Quick Actions */}
-            <TrainerQuickActions />
-            
-            {/* Recent Activity */}
-            <TrainerRecentActivity />
-          </div>
-        )}
+{/* Main Content */}
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  {activeTab === 'overview' && (
+    <div className="space-y-8">
+      <TrainerStatsCards />
+      <TrainerQuickActions />
+      <TrainerRecentActivity />
+    </div>
+  )}
 
- 
+  {activeTab === 'clients' && (
+    <div className="space-y-8">
+      <TrainerClientsOverview />
+    </div>
+  )}
 
-        {activeTab === 'clients' && (
-          <div className="space-y-8">
-            <TrainerClientsOverview />
-          </div>
-        )}
-
-        {activeTab === 'plans' && (
-          <div className="space-y-8">
-            <TrainerPlansManager />
-          </div>
-        )}
-
-        {activeTab === 'progress' && (
-          <div className="space-y-8">
-            <TrainerProgressOverview />
-          </div>
-        )}
-
-        {activeTab === 'profile' && (
-          <div className="space-y-8">
-            <TrainerProfile />
-          </div>
-        )}
-
-        {activeTab === 'attendance' && (
-          <div className="space-y-8">
-            <TrainerAttendance />
-          </div>
-        )}
-
-        {activeTab === 'clientSessions' && (
-          <div className="space-y-8">
-            <TrainerClientSessions />
-          </div>
-        )}
-
-
-
-        {activeTab === 'feedback' && (
-          <div className="space-y-8">
-            <TrainerFeedback />
-          </div>
-        )}
-
-        {activeTab === 'messages' && (
-          <div className="space-y-8">
-            {/* Toggle between normal and chat view */}
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={toggleChatMode}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  chatMode
-                    ? 'bg-gray-500 text-white hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                }`}
-              >
-                {chatMode ? '📋 العرض التقليدي' : '💬 عرض الشات'}
-              </button>
-            </div>
-            
-            {chatMode ? <TrainerMessagesChat /> : <TrainerMessages />}
-          </div>
-        )}
-
-        {activeTab === 'loyalty' && (
-          <div className="space-y-8">
-            <TrainerLoyaltyPoints />
-          </div>
-        )}
-
-        {activeTab === 'schedule' && (
-          <div className="space-y-8">
-            <TrainerScheduledList />
-          </div>
-        )}
+  {activeTab === 'plans' && (
+    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerPlansManager />
       </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'progress' && (
+    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerProgressOverview />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'profile' && (
+    <div className="space-y-8">
+      <TrainerProfile />
+    </div>
+  )}
+
+  {activeTab === 'attendance' && (
+    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerAttendance />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'clientSessions' && (
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerClientSessions />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'feedback' && (
+    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerFeedback />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'messages' && (
+    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <div className="flex justify-end mb-4">
+          <button onClick={toggleChatMode} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${chatMode ? 'bg-gray-500 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}`}>
+            {chatMode ? '📋 العرض التقليدي' : '💬 عرض الشات'}
+          </button>
+        </div>
+        {chatMode ? <TrainerMessagesChat /> : <TrainerMessages />}
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'loyalty' && (
+    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerLoyaltyPoints />
+      </div>
+    </FeatureGate>
+  )}
+
+  {activeTab === 'schedule' && (
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+      <div className="space-y-8">
+        <TrainerScheduledList />
+      </div>
+    </FeatureGate>
+  )}
+</div>
     </div>
   );
 };

@@ -159,6 +159,14 @@ const AdminQuickActions = () => {
       action: () => router.push(`/admin/dashboard/${user?.id}?tab=messages`)
     },
     {
+      id: 'whatsapp',
+      title: 'واتساب',
+      description: 'فتح واتساب',
+      icon: '📱',
+      color: 'green',
+      action: () => router.push(`/admin/dashboard/${user?.id}?tab=whatsapp`)
+    },
+    {
       id: 'progress',
       title: 'تقدم العملاء',
       description: 'متابعة تقدم العملاء',
