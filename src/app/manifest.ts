@@ -9,6 +9,10 @@ const logo192 = fallbackLogo192;
 const logo512 = fallbackLogo512;
 const gymName = fallbackGymName;
 
+// Get PWA colors from environment variables or use defaults
+const primaryColor = process.env.NEXT_PUBLIC_PWA_PRIMARY_COLOR || "#000000";
+const backgroundColor = process.env.NEXT_PUBLIC_PWA_BACKGROUND_COLOR || "#FFFFFF";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: gymName,
@@ -16,8 +20,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: `${gymName} Application`,
     start_url: "/",
     display: "standalone",
-    background_color: "#000000",
-    theme_color: "#000000",
+    background_color: backgroundColor,
+    theme_color: primaryColor,
     orientation: "portrait",
     scope: "/",
     lang: "ar",
