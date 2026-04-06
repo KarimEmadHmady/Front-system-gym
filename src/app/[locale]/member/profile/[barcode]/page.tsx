@@ -268,7 +268,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'attendance' && (
-    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="attendance" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberAttendance />
       </div>
@@ -276,7 +276,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'payments' && (
-    <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="payments" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberPayments />
       </div>
@@ -290,7 +290,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'purchases' && (
-    <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="purchases" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberPurchases />
       </div>
@@ -298,7 +298,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'sessions' && (
-    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberSessionsHistory />
       </div>
@@ -306,7 +306,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'plans' && (
-    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberPlansOverview />
       </div>
@@ -320,7 +320,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'messages' && (
-    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="messages" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <div className="flex justify-end mb-4">
           <button onClick={toggleChatMode} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${chatMode ? 'bg-gray-500 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}`}>
@@ -333,7 +333,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'feedback' && (
-    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="feedback" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberFeedback />
       </div>
@@ -341,7 +341,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'progress' && (
-    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberProgressTracking />
       </div>
@@ -349,7 +349,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'loyalty' && (
-    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberLoyaltyPoints />
       </div>
@@ -357,7 +357,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
   )}
 
   {activeTab === 'settings' && (
-    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="coming" role="member" />}>
       <div className="space-y-8">
         <MemberSettings />
       </div>

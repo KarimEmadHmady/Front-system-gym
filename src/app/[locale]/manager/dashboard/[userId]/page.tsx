@@ -226,7 +226,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'users' && (
-    <FeatureGate feature="users" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="users" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <SubscriptionAlertsSummary />
         <ManagerUsersTable />
@@ -241,7 +241,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'sessions' && (
-    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminSessionsOverview />
       </div>
@@ -249,7 +249,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'plans' && (
-    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminPlansOverview />
       </div>
@@ -261,7 +261,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'attendance' && (
-    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminAttendance />
       </div>
@@ -269,7 +269,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'attendance-log' && (
-    <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerAttendanceScanner params={{ userId: user!.id }} />
       </div>
@@ -277,7 +277,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'payments' && (
-    <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminPayments />
       </div>
@@ -285,7 +285,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'invoices' && (
-    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerInvoices />
       </div>
@@ -293,7 +293,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'add-expense' && (
-    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerAddExpense />
       </div>
@@ -301,7 +301,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'add-revenue' && (
-    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerAddRevenue />
       </div>
@@ -309,7 +309,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'purchases' && (
-    <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminPurchases />
       </div>
@@ -317,7 +317,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'messages' && (
-    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminMessages />
       </div>
@@ -325,7 +325,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'progress' && (
-    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminProgress />
       </div>
@@ -333,7 +333,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'feedback' && (
-    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerFeedback />
       </div>
@@ -341,7 +341,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'loyalty' && (
-    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <AdminLoyalty />
       </div>
@@ -349,7 +349,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'settings' && (
-    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerSettings />
       </div>

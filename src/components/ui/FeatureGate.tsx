@@ -14,7 +14,6 @@ type Props = {
 export function FeatureGate({ feature, children, fallback = null }: Props) {
   const { isEnabled, isLoading } = useFeatures();
 
-  console.log(`FeatureGate [${feature}] isLoading:`, isLoading, '| isEnabled:', isEnabled(feature));
 
   if (isLoading) return <GateSkeleton />;
   if (!isEnabled(feature)) return <>{fallback}</>;

@@ -65,77 +65,61 @@ const TrainerClientSessions = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const trainerId = getCurrentTrainerId();
-      console.log('Trainer ID:', trainerId);
-      
-      if (!trainerId) {
-        showError('خطأ في المصادقة', 'لم يتم العثور على بيانات المدرب. يرجى تسجيل الدخول مرة أخرى.');
-        console.log('Available localStorage keys:', Object.keys(localStorage));
-        return;
-      }
-
-      // Load trainer's sessions and clients
-      console.log('Loading sessions and clients...');
-      const [sessionsData, clientsData] = await Promise.all([
-        sessionScheduleService.getSessionsByUser(trainerId),
-        // Use backend-authenticated endpoint to derive trainer from token
-        userService.getMyClients()
-      ]);
-
-      console.log('Sessions data:', sessionsData);
-      console.log('Clients data:', clientsData);
-
-      setSessions(sessionsData || []);
-      
-      // Ensure clients is a flat array
-      let clientsArr: User[] = Array.isArray(clientsData) ? clientsData : [];
-
-      // Fallback: if empty, fetch members and filter by trainerId (as in TrainerClientsOverview)
-      if (!clientsArr.length) {
-        try {
-          const membersRes: any = await userService.getUsersByRole('member', { page: 1, limit: 1000 } as any);
-          const arr = Array.isArray(membersRes) ? membersRes : (membersRes?.data || []);
-          const normalizeId = (val: any): string => {
-            if (!val) return '';
-            if (typeof val === 'string') return val;
-            if (typeof val === 'object') return (val._id || val.id || '') as string;
-            return String(val);
-          };
-          const me = normalizeId(trainerId);
-          clientsArr = (arr || []).filter((m: any) => normalizeId(m?.trainerId) === me);
-        } catch (e) {
-          console.warn('Fallback members fetch failed:', e);
-        }
-      }
-      console.log('Processed clients:', clientsArr);
-      setClients(clientsArr);
-      
-      // If no data is loaded, show a message
-      if ((!sessionsData || sessionsData.length === 0) && clientsArr.length === 0) {
-        showWarning('لا توجد بيانات', 'لا توجد حصص أو عملاء متاحين حالياً');
-      }
-      
-      // If no clients are available, show a specific message
-      if (clientsArr.length === 0) {
-        showWarning('لا يوجد عملاء', 'لم يتم العثور على عملاء مرتبطين بهذا المدرب');
-      }
-      
-      // If no sessions are available, show a specific message
-      if (!sessionsData || sessionsData.length === 0) {
-        showWarning('لا توجد حصص', 'لم يتم العثور على حصص مرتبطة بهذا المدرب');
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      showError('خطأ في التحميل', `حدث خطأ في تحميل البيانات: ${error instanceof Error ? error.message : String(error)}`);
-      setSessions([]);
-      setClients([]);
-    } finally {
-      setLoading(false);
+const loadData = async () => {
+  try {
+    setLoading(true);
+    const trainerId = getCurrentTrainerId();
+    if (!trainerId) {
+      showError('خطأ في المصادقة', 'لم يتم العثور على بيانات المدرب. يرجى تسجيل الدخول مرة أخرى.');
+      return;
     }
-  };
+
+    const [sessionsData, clientsData] = await Promise.all([
+      sessionScheduleService.getSessionsByUser(trainerId),
+      userService.getMyClients()
+    ]);
+
+    // ✅ helper
+    const toArray = (res: any): any[] => {
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+      if (res && Array.isArray(res.results)) return res.results;
+      return [];
+    };
+
+    const sessionsArr = toArray(sessionsData);
+    let clientsArr = toArray(clientsData);
+
+    // Fallback للعملاء
+    if (!clientsArr.length) {
+      try {
+        const membersRes: any = await userService.getUsersByRole('member', { page: 1, limit: 1000 } as any);
+        const arr = toArray(membersRes);
+        const normalizeId = (val: any): string => {
+          if (!val) return '';
+          if (typeof val === 'string') return val;
+          if (typeof val === 'object') return (val._id || val.id || '') as string;
+          return String(val);
+        };
+        const me = normalizeId(trainerId);
+        clientsArr = arr.filter((m: any) => normalizeId(m?.trainerId) === me);
+      } catch (e) {
+        console.warn('Fallback members fetch failed:', e);
+      }
+    }
+
+    setSessions(sessionsArr);
+    setClients(clientsArr);
+
+  } catch (error) {
+    console.error('Error loading data:', error);
+    showError('خطأ في التحميل', `حدث خطأ: ${error instanceof Error ? error.message : String(error)}`);
+    setSessions([]);
+    setClients([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();

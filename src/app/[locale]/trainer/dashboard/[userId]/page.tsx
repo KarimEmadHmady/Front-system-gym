@@ -253,7 +253,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'plans' && (
-    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerPlansManager />
       </div>
@@ -261,7 +261,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'progress' && (
-    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerProgressOverview />
       </div>
@@ -275,7 +275,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'attendance' && (
-    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="attendance" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerAttendance />
       </div>
@@ -283,7 +283,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'clientSessions' && (
-    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerClientSessions />
       </div>
@@ -291,7 +291,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'feedback' && (
-    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="feedback" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerFeedback />
       </div>
@@ -299,7 +299,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'messages' && (
-    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="messages" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <div className="flex justify-end mb-4">
           <button onClick={toggleChatMode} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${chatMode ? 'bg-gray-500 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'}`}>
@@ -312,7 +312,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'loyalty' && (
-    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerLoyaltyPoints />
       </div>
@@ -320,7 +320,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   )}
 
   {activeTab === 'schedule' && (
-    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" />}>
+    <FeatureGate feature="schedules" fallback={<FeatureBanner type="warning" role="trainer" />}>
       <div className="space-y-8">
         <TrainerScheduledList />
       </div>

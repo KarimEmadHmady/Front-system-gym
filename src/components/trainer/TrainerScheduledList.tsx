@@ -35,26 +35,38 @@ const TrainerScheduledList = () => {
   };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const trainerId = getCurrentTrainerId();
-        if (!trainerId) {
-          setError('لم يتم العثور على بيانات المدرب');
-          setSessions([]);
-          return;
-        }
-        const allSessions = await sessionScheduleService.getSessionsByUser(trainerId);
-        const scheduledOnly = (allSessions || []).filter((s) => s.status === 'مجدولة');
-        setSessions(scheduledOnly);
-      } catch (e: any) {
-        setError(e?.message || 'حدث خطأ في تحميل البيانات');
-        setSessions([]);
-      } finally {
-        setLoading(false);
-      }
+const load = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    const trainerId = getCurrentTrainerId();
+    if (!trainerId) {
+      setError('لم يتم العثور على بيانات المدرب');
+      setSessions([]);
+      return;
+    }
+
+    const result = await sessionScheduleService.getSessionsByUser(trainerId);
+
+    // ✅ تحويل أي response لـ array
+    const toArray = (res: any): any[] => {
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+      if (res && Array.isArray(res.results)) return res.results;
+      return [];
     };
+
+    const allSessions = toArray(result);
+    const scheduledOnly = allSessions.filter((s) => s.status === 'مجدولة');
+    setSessions(scheduledOnly);
+
+  } catch (e: any) {
+    setError(e?.message || 'حدث خطأ في تحميل البيانات');
+    setSessions([]);
+  } finally {
+    setLoading(false);
+  }
+};
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

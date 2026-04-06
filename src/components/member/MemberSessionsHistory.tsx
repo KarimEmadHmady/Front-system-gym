@@ -72,49 +72,51 @@ const MemberSessionsHistory = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const memberId = getCurrentMemberId();
-      console.log('Member ID:', memberId);
-      
-      if (!memberId) {
-        showError('خطأ في المصادقة', 'لم يتم العثور على بيانات العضو. يرجى تسجيل الدخول مرة أخرى.');
-        console.log('Available localStorage keys:', Object.keys(localStorage));
-        return;
-      }
-
-      // Load member's sessions only
-      console.log('Loading sessions...');
-      const sessionsData = await sessionScheduleService.getSessionsByUser(memberId);
-      console.log('Sessions data:', sessionsData);
-      setSessions(sessionsData || []);
-
-      // جلب أسماء المدربين لكل trainerId بدون تكرار
-      const uniqueTrainerIds = Array.from(new Set((sessionsData || []).map((s: any) => s.trainerId).filter(Boolean)));
-      const namesMap: Record<string, string> = {};
-      await Promise.all(uniqueTrainerIds.map(async (id) => {
-        try {
-          const trainer = await userService.getUser(id);
-          namesMap[id] = trainer?.name || 'غير محدد';
-        } catch {
-          namesMap[id] = 'غير محدد';
-        }
-      }));
-      setTrainerNames(namesMap);
-
-      // If no sessions are available, show a specific message
-      if (!sessionsData || sessionsData.length === 0) {
-        showWarning('لا توجد حصص', 'لم يتم العثور على حصص مرتبطة بهذا العضو');
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      showError('خطأ في التحميل', `حدث خطأ في تحميل البيانات: ${error instanceof Error ? error.message : String(error)}`);
-      setSessions([]);
-    } finally {
-      setLoading(false);
+const loadData = async () => {
+  try {
+    setLoading(true);
+    const memberId = getCurrentMemberId();
+    if (!memberId) {
+      showError('خطأ في المصادقة', 'لم يتم العثور على بيانات العضو. يرجى تسجيل الدخول مرة أخرى.');
+      return;
     }
-  };
+
+    const toArray = (res: any): any[] => {
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+      if (res && Array.isArray(res.results)) return res.results;
+      return [];
+    };
+
+    const result = await sessionScheduleService.getSessionsByUser(memberId);
+    const sessionsArr = toArray(result);
+    setSessions(sessionsArr);
+
+    // جلب أسماء المدربين
+    const uniqueTrainerIds = Array.from(new Set(sessionsArr.map((s: any) => s.trainerId).filter(Boolean)));
+    const namesMap: Record<string, string> = {};
+    await Promise.all(uniqueTrainerIds.map(async (id) => {
+      try {
+        const trainer = await userService.getUser(id as string);
+        namesMap[id as string] = trainer?.name || 'غير محدد';
+      } catch {
+        namesMap[id as string] = 'غير محدد';
+      }
+    }));
+    setTrainerNames(namesMap);
+
+    if (!sessionsArr.length) {
+      showWarning('لا توجد حصص', 'لم يتم العثور على حصص مرتبطة بهذا العضو');
+    }
+
+  } catch (error) {
+    console.error('Error loading data:', error);
+    showError('خطأ في التحميل', `حدث خطأ: ${error instanceof Error ? error.message : String(error)}`);
+    setSessions([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getTrainerName = (trainerId: string) => {
     if (!trainerId) return 'غير محدد';

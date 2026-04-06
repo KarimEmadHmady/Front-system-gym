@@ -26,75 +26,98 @@ const TrainerRecentActivity = () => {
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!trainerId) return;
-    setLoading(true);
-    const progressService = new ProgressService();
-    Promise.all([
-      sessionScheduleService.getSessionsByUser(trainerId),
-      getFeedbackForUser(trainerId),
-      progressService.getTrainerProgress(trainerId),
-      messageService.getMessagesForUser(trainerId),
-    ]).then(([sessions, feedbacks, progresses, messages]) => {
-      const acts: any[] = [];
-      // آخر حصة مكتملة أو مجدولة
-      const latestSession = (sessions || [])
-        .filter((s: SessionSchedule) => s.status === 'مكتملة' || s.status === 'مجدولة')
-        .sort((a: SessionSchedule, b: SessionSchedule) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      if (latestSession) {
-        acts.push({
-          id: 'session',
-          type: latestSession.status === 'مكتملة' ? 'session_completed' : 'session_scheduled',
-          title: latestSession.status === 'مكتملة' ? 'حصة مكتملة' : 'حصة مجدولة',
-          description: latestSession.description || `حصة ${latestSession.sessionType} مع متدرب`,
-          time: getRelativeTime(latestSession.date),
-          icon: latestSession.status === 'مكتملة' ? '🏋️' : '📅',
-          color: latestSession.status === 'مكتملة' ? 'green' : 'indigo',
-        });
-      }
-      // آخر تقييم
-      const latestFeedback = (feedbacks || []).sort((a: Feedback, b: Feedback) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      if (latestFeedback) {
-        acts.push({
-          id: 'feedback',
-          type: 'client_feedback',
-          title: 'تقييم جديد',
-          description: `${latestFeedback.rating} نجوم${latestFeedback.comment ? ' - ' + latestFeedback.comment : ''}`,
-          time: getRelativeTime(latestFeedback.date),
-          icon: '⭐',
-          color: 'yellow',
-        });
-      }
-      // آخر تقدم عميل
-      const latestProgress = (progresses || []).sort((a: ClientProgress, b: ClientProgress) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      if (latestProgress) {
-        acts.push({
-          id: 'progress',
-          type: 'client_progress',
-          title: 'تقدم عميل',
-          description: latestProgress.notes || 'تم تسجيل تقدم جديد لأحد العملاء',
-          time: getRelativeTime(latestProgress.date),
-          icon: '📈',
-          color: 'blue',
-        });
-      }
-      // آخر رسالة غير مقروءة
-      const unreadMessages = (messages || []).filter((m: Message) => !m.read && m.userId === trainerId);
-      const latestUnread = unreadMessages.sort((a: Message, b: Message) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      if (latestUnread) {
-        acts.push({
-          id: 'unread_message',
-          type: 'message_unread',
-          title: 'رسالة غير مقروءة',
-          description: latestUnread.subject ? latestUnread.subject : (latestUnread.message?.slice(0, 30) + '...'),
-          time: getRelativeTime(latestUnread.date),
-          icon: '💬',
-          color: 'pink',
-        });
-      }
-      setActivities(acts);
-    }).finally(() => setLoading(false));
-  }, [trainerId]);
+useEffect(() => {
+  if (!trainerId) return;
+  setLoading(true);
+  const progressService = new ProgressService();
+  Promise.all([
+    sessionScheduleService.getSessionsByUser(trainerId),
+    getFeedbackForUser(trainerId),
+    progressService.getTrainerProgress(trainerId),
+    messageService.getMessagesForUser(trainerId),
+  ]).then(([sessions, feedbacks, progresses, messages]) => {
+    const acts: any[] = [];
+
+    const toArray = (res: any) => {
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+      if (res && Array.isArray(res.results)) return res.results;
+      return [];
+    };
+
+    const sessionsArray   = toArray(sessions);
+    const feedbacksArray  = toArray(feedbacks);
+    const progressesArray = toArray(progresses);
+    const messagesArray   = toArray(messages);
+
+    // آخر حصة مكتملة أو مجدولة
+    const latestSession = sessionsArray
+      .filter((s: SessionSchedule) => s.status === 'مكتملة' || s.status === 'مجدولة')
+      .sort((a: SessionSchedule, b: SessionSchedule) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    if (latestSession) {
+      acts.push({
+        id: 'session',
+        type: latestSession.status === 'مكتملة' ? 'session_completed' : 'session_scheduled',
+        title: latestSession.status === 'مكتملة' ? 'حصة مكتملة' : 'حصة مجدولة',
+        description: latestSession.description || `حصة ${latestSession.sessionType} مع متدرب`,
+        time: getRelativeTime(latestSession.date),
+        icon: latestSession.status === 'مكتملة' ? '🏋️' : '📅',
+        color: latestSession.status === 'مكتملة' ? 'green' : 'indigo',
+      });
+    }
+
+    // آخر تقييم
+    const latestFeedback = feedbacksArray
+      .sort((a: Feedback, b: Feedback) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    if (latestFeedback) {
+      acts.push({
+        id: 'feedback',
+        type: 'client_feedback',
+        title: 'تقييم جديد',
+        description: `${latestFeedback.rating} نجوم${latestFeedback.comment ? ' - ' + latestFeedback.comment : ''}`,
+        time: getRelativeTime(latestFeedback.date),
+        icon: '⭐',
+        color: 'yellow',
+      });
+    }
+
+    // آخر تقدم عميل
+    const latestProgress = progressesArray
+      .sort((a: ClientProgress, b: ClientProgress) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    if (latestProgress) {
+      acts.push({
+        id: 'progress',
+        type: 'client_progress',
+        title: 'تقدم عميل',
+        description: latestProgress.notes || 'تم تسجيل تقدم جديد لأحد العملاء',
+        time: getRelativeTime(latestProgress.date),
+        icon: '📈',
+        color: 'blue',
+      });
+    }
+
+    // آخر رسالة غير مقروءة
+    const latestUnread = messagesArray
+      .filter((m: Message) => !m.read && m.userId === trainerId)
+      .sort((a: Message, b: Message) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    if (latestUnread) {
+      acts.push({
+        id: 'unread_message',
+        type: 'message_unread',
+        title: 'رسالة غير مقروءة',
+        description: latestUnread.subject ? latestUnread.subject : (latestUnread.message?.slice(0, 30) + '...'),
+        time: getRelativeTime(latestUnread.date),
+        icon: '💬',
+        color: 'pink',
+      });
+    }
+
+    setActivities(acts);
+  }).catch((error) => {
+    console.error('Error loading trainer activities:', error);
+    setActivities([]);
+  }).finally(() => setLoading(false));
+}, [trainerId]);
 
   const getColorClasses = (color: string) => {
     const colors = {
