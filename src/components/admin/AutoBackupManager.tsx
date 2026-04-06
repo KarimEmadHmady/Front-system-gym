@@ -65,8 +65,6 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
     checkResult,
     loading,
     manualLoading,
-    downloadingFile,
-    downloadBackup,
     runManualBackup,
   } = useBackup();
 
@@ -76,29 +74,32 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
     return true;
   });
 
-  // ── One-shot guards (useRef never causes re-renders) ──────────────────────
-  const backupTriggered   = useRef(false);
-  const downloadTriggered = useRef(false);
+  // ── One-shot guard ─────────────────────────────────────────────────────────
+  const backupTriggered = useRef(false);
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  // Read backup data from checkResult — set by runManualBackup in the hook
-  const backupData = (checkResult && 'backup' in checkResult) ? checkResult.backup : null;
-  const isWorking  = manualLoading || !!downloadingFile;
+  // Read backup data from the result returned by runManualBackup
+  const [backupData, setBackupData] = useState<{
+    fileName: string;
+    sizeMB: string;
+    totalDocuments: number;
+  } | null>(null);
+
+  const isWorking = manualLoading;
 
   // ── Step ──────────────────────────────────────────────────────────────────
-  type Step = 'idle' | 'creating' | 'downloading' | 'done';
+  type Step = 'idle' | 'creating' | 'done';
+
   const step: Step =
-    !!backupData && !downloadingFile ? 'done'
-    : !!downloadingFile              ? 'downloading'
-    : manualLoading                  ? 'creating'
+    !!backupData    ? 'done'
+    : manualLoading ? 'creating'
     : 'idle';
 
-  const stepIndex = { idle: -1, creating: 0, downloading: 1, done: 2 }[step];
+  const stepIndex = { idle: -1, creating: 0, done: 1 }[step];
 
   const steps = [
-    { id: 'create',   label: 'إنشاء النسخة' },
-    { id: 'download', label: 'التنزيل'       },
-    { id: 'done',     label: 'اكتمل'          },
+    { id: 'create', label: 'إنشاء النسخة' },
+    { id: 'done',   label: 'اكتمل'         },
   ];
 
   // ── Effect: trigger backup ONCE on open ───────────────────────────────────
@@ -106,23 +107,26 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
     if (!showModal) return;
     if (loading) return;
     if (manualLoading) return;
-    if (backupTriggered.current) return; // already ran — never run again
+    if (backupTriggered.current) return;
 
     backupTriggered.current = true;
 
     const t = setTimeout(async () => {
+      // التنزيل بيحصل أوتوماتيك جوّه الـ service
       const result = await runManualBackup();
 
-      // Auto-download immediately after backup completes (one-shot)
-      if (result && 'backup' in result && result.backup.fileName && !downloadTriggered.current) {
-        downloadTriggered.current = true;
-        setTimeout(() => downloadBackup(result.backup.fileName), 800);
+      if (result && result.success) {
+        setBackupData({
+          fileName:       result.backup.fileName,
+          sizeMB:         result.backup.sizeMB,
+          totalDocuments: result.backup.totalDocuments,
+        });
       }
     }, 1500);
 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal, loading]); // intentionally minimal deps
+  }, [showModal, loading]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -139,19 +143,17 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
   // Manual re-trigger (user pressed button after idle)
   const handleManualBackup = useCallback(async () => {
     if (manualLoading) return;
-    backupTriggered.current = true; // prevent double-trigger from effect
+    backupTriggered.current = true;
+    // التنزيل بيحصل أوتوماتيك جوّه الـ service
     const result = await runManualBackup();
-    if (result && 'backup' in result && result.backup.fileName && !downloadTriggered.current) {
-      downloadTriggered.current = true;
-      setTimeout(() => downloadBackup(result.backup.fileName), 800);
+    if (result && result.success) {
+      setBackupData({
+        fileName:       result.backup.fileName,
+        sizeMB:         result.backup.sizeMB,
+        totalDocuments: result.backup.totalDocuments,
+      });
     }
-  }, [runManualBackup, downloadBackup, manualLoading]);
-
-  const handleDownload = useCallback(() => {
-    if (backupData?.fileName && !downloadingFile) {
-      downloadBackup(backupData.fileName);
-    }
-  }, [backupData, downloadBackup, downloadingFile]);
+  }, [runManualBackup, manualLoading]);
 
   // ── Guard ─────────────────────────────────────────────────────────────────
   if (!isBackupDay() || !showModal) return null;
@@ -239,7 +241,7 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
             <ul className="space-y-2.5">
               {[
                 { icon: <Database className="w-3.5 h-3.5" />, text: 'نسخة كاملة من جميع بيانات قاعدة البيانات' },
-                { icon: <Download className="w-3.5 h-3.5" />, text: 'يُنزَّل الملف تلقائياً على جهازك' },
+                { icon: <Download className="w-3.5 h-3.5" />, text: 'يُنزَّل الملف تلقائياً على جهازك فور الإنشاء' },
                 { icon: <Settings className="w-3.5 h-3.5" />, text: 'يمكن إدارة النسخ من صفحة الإعدادات' },
               ].map(({ icon, text }) => (
                 <li key={text} className="flex items-center gap-2.5 text-sm text-gray-600 dark:text-gray-400">
@@ -257,18 +259,8 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
               <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/60 rounded-2xl text-blue-800 dark:text-blue-200">
                 <RefreshCw className="w-5 h-5 animate-spin shrink-0 text-blue-500" />
                 <div>
-                  <p className="font-semibold text-sm">جاري إنشاء النسخة الاحتياطية…</p>
+                  <p className="font-semibold text-sm">جاري إنشاء النسخة الاحتياطية وتنزيلها…</p>
                   <p className="text-xs opacity-60 mt-0.5">قد يستغرق هذا لحظات، لا تغلق الصفحة</p>
-                </div>
-              </div>
-            )}
-
-            {step === 'downloading' && (
-              <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/60 rounded-2xl text-indigo-800 dark:text-indigo-200">
-                <Download className="w-5 h-5 shrink-0 text-indigo-500 animate-bounce" />
-                <div>
-                  <p className="font-semibold text-sm">جاري التنزيل…</p>
-                  <p className="text-xs opacity-60 mt-0.5 truncate max-w-[260px]">{downloadingFile}</p>
                 </div>
               </div>
             )}
@@ -277,7 +269,7 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
               <div>
                 <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl text-emerald-800 dark:text-emerald-200 mb-3">
                   <CheckCircle className="w-5 h-5 shrink-0 text-emerald-500" />
-                  <p className="font-semibold text-sm">تمت النسخة الاحتياطية بنجاح! 🎉</p>
+                  <p className="font-semibold text-sm">تمت النسخة الاحتياطية وتنزيلها بنجاح! 🎉</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <StatPill
@@ -309,25 +301,6 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
 
           {/* ── Actions ── */}
           <div className="flex flex-col gap-2.5">
-
-            {step === 'done' && (
-              <button
-                onClick={handleDownload}
-                disabled={!!downloadingFile}
-                className="
-                  w-full flex items-center justify-center gap-2.5
-                  px-5 py-3.5 rounded-2xl font-bold text-sm text-white
-                  bg-gradient-to-r from-emerald-500 to-teal-500
-                  hover:from-emerald-600 hover:to-teal-600
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  shadow-lg shadow-emerald-500/25
-                  transition-all duration-200 active:scale-[0.98]
-                "
-              >
-                <Download className="w-4 h-4" />
-                تنزيل النسخة الاحتياطية
-              </button>
-            )}
 
             {step === 'idle' && (
               <button
@@ -372,7 +345,7 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
                   transition-all duration-200
                 "
               >
-                إلغاء وإغلاق
+                إغلاق
               </button>
             </div>
           </div>

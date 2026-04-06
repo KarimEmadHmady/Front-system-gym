@@ -271,8 +271,19 @@ const AdminUsersTable = () => {
       await userService.createUser(userData);
       setIsCreateOpen(false);
       setRefresh(r => !r); // Refresh to show new user
-    } catch (err) {
-      setFormError('حدث خطأ أثناء إنشاء المستخدم');
+    } catch (err: any) {
+      // استخراج الرسالة الدقيقة من API إذا وجدت
+      let errorMessage = 'حدث خطأ أثناء إنشاء المستخدم';
+      
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      setFormError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -301,8 +312,19 @@ const AdminUsersTable = () => {
       setIsRoleOpen(false);
       setRefresh(r => !r);
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم تغيير الدور بنجاح' } }));
-    } catch {
-      setRoleError('حدث خطأ أثناء تغيير الدور');
+    } catch (err: any) {
+      // استخراج الرسالة الدقيقة من API إذا وجدت
+      let errorMessage = 'حدث خطأ أثناء تغيير الدور';
+      
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      setRoleError(errorMessage);
     } finally {
       setIsRoleSubmitting(false);
     }
@@ -540,11 +562,21 @@ const AdminUsersTable = () => {
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم تعديل المستخدم بنجاح' } }));
     } catch (err: any) {
       console.error('Error updating user:', err);
-      if (err.message && err.message.includes('E11000 duplicate key error')) {
-        setEditError('الباركود مستخدم بالفعل. يرجى إدخال باركود فريد.');
-      } else {
-        setEditError(err.message || 'حدث خطأ أثناء التعديل');
+      
+      // استخراج الرسالة الدقيقة من API إذا وجدت
+      let errorMessage = 'حدث خطأ أثناء التعديل';
+      
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message && err.message.includes('E11000 duplicate key error')) {
+        errorMessage = 'الباركود مستخدم بالفعل. يرجى إدخال باركود فريد.';
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
       }
+      
+      setEditError(errorMessage);
     } finally {
       setIsEditSubmitting(false);
     }

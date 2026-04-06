@@ -17,6 +17,7 @@ import AdminInvoices from '@/components/admin/AdminInvoices';
 import AdminPayroll from '@/components/admin/AdminPayroll';
 import DashboardSidebar from '@/components/ui/DashboardSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
 
 const AccountantDashboard = ({ params }: { params: Promise<{ userId: string }> }) => {
   const resolvedParams = use(params);
@@ -116,6 +117,7 @@ const AccountantDashboard = ({ params }: { params: Promise<{ userId: string }> }
                 </div>
               </div>
               <div className="flex items-center space-x-3">
+                <ThemeToggleButton />
                 <button
                   onClick={logout}
                   aria-label="تسجيل الخروج"

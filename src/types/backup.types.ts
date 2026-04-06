@@ -1,24 +1,16 @@
-// types/backup.ts
-
-// ─────────────────────────────────────────────
-// Shared
-// ─────────────────────────────────────────────
+// types/backup.types.ts
 
 export interface BackupFile {
   fileName: string;
   sizeMB: string;
-  createdAt: string; // ISO date string
+  createdAt: string;
 }
-
-// ─────────────────────────────────────────────
-// GET /api/backup/check
-// ─────────────────────────────────────────────
 
 export type CheckReason = 'not_backup_day' | 'already_done_today' | 'backup_day';
 
 interface BackupCheckBase {
   success: boolean;
-  nextBackup: string;           // e.g. "15 يناير"
+  nextBackup: string;
   existingBackups: BackupFile[];
 }
 
@@ -36,10 +28,6 @@ export interface BackupCheckDone extends BackupCheckBase {
 
 export type BackupCheckResponse = BackupCheckSkipped | BackupCheckDone;
 
-// ─────────────────────────────────────────────
-// Backup details (في check و manual)
-// ─────────────────────────────────────────────
-
 export interface BackupDetails {
   fileName: string;
   sizeMB: string;
@@ -48,30 +36,12 @@ export interface BackupDetails {
   createdAt: string;
 }
 
-// ─────────────────────────────────────────────
-// GET /api/backup/list
-// ─────────────────────────────────────────────
-
-export interface BackupListResponse {
-  success: boolean;
-  count: number;
-  backups: BackupFile[];
-}
-
-// ─────────────────────────────────────────────
-// POST /api/backup/manual
-// ─────────────────────────────────────────────
-
+// ✅ مفيش existingBackups هنا لأن الراوت بيرجع binary مش JSON
 export interface ManualBackupResponse {
   success: boolean;
   message: string;
   backup: BackupDetails;
-  existingBackups: BackupFile[];
 }
-
-// ─────────────────────────────────────────────
-// Hook state
-// ─────────────────────────────────────────────
 
 export type NotificationType = 'success' | 'info' | 'error';
 

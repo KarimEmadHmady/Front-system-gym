@@ -172,52 +172,69 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
           </button>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">إضافة مستخدم جديد</h4>
           {props.formError && (
-            <div className="mb-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded px-3 py-2">
-              {props.formError}
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">خطأ في إضافة المستخدم</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">{props.formError}</p>
+                </div>
+              </div>
             </div>
           )}
           <form onSubmit={props.handleCreateSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">الاسم</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">الاسم *</label>
               <input
                 name="name"
                 value={props.newUser.name}
                 onChange={props.handleCreateChange}
-                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                placeholder="ادخل الاسم"
+                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="ادخل الاسم الكامل"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">البريد الإلكتروني</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">البريد الإلكتروني *</label>
               <input
                 type="email"
                 name="email"
                 value={props.newUser.email}
                 onChange={props.handleCreateChange}
-                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="email@example.com"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">كلمة المرور</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">كلمة المرور *</label>
               <input
                 type="password"
                 name="password"
                 value={props.newUser.password}
                 onChange={props.handleCreateChange}
-                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="••••••••"
+                required
+                minLength={4}
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">على الأقل 4 أحرف</p>
             </div>
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">رقم الهاتف</label>
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">رقم الهاتف *</label>
               <input
                 name="phone"
                 value={props.newUser.phone || ''}
                 onChange={props.handleCreateChange}
-                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="01234567890"
+                required
+                minLength={10}
+                maxLength={15}
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">من 10 إلى 15 رقم</p>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
@@ -231,9 +248,24 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
               <button
                 type="submit"
                 disabled={props.isSubmitting}
-                className="px-4 py-2 rounded-md bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white"
+                className="px-6 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium transition-colors duration-200 flex items-center gap-2"
               >
-                {props.isSubmitting ? 'جارٍ الإضافة...' : 'إضافة'}
+                {props.isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>جارٍ الإضافة...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>إضافة مستخدم</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -247,7 +279,17 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
         <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6 z-10">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">تغيير دور المستخدم</h4>
           {props.roleError && (
-            <div className="mb-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded px-3 py-2">{props.roleError}</div>
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">خطأ في تغيير الدور</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">{props.roleError}</p>
+                </div>
+              </div>
+            </div>
           )}
           <form onSubmit={props.handleRoleSubmit} className="space-y-4">
             <div>
@@ -266,7 +308,24 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
             </div>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button type="button" onClick={() => props.setIsRoleOpen(false)} className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200">إلغاء</button>
-              <button type="submit" disabled={props.isRoleSubmitting} className="px-4 py-2 rounded-md bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white">{props.isRoleSubmitting ? 'جارٍ الحفظ...' : 'حفظ'}</button>
+              <button type="submit" disabled={props.isRoleSubmitting} className="px-6 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium transition-colors duration-200 flex items-center gap-2">
+                {props.isRoleSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>جارٍ الحفظ...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>حفظ التغيير</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>
@@ -288,7 +347,17 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
         </button>
           <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">تعديل المستخدم</h4>
           {props.editError && (
-            <div className="mb-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded px-3 py-2">{props.editError}</div>
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">خطأ في تعديل المستخدم</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">{props.editError}</p>
+                </div>
+              </div>
+            </div>
           )}
           <form
             onSubmit={props.handleEditSubmit}
@@ -587,7 +656,24 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
             </div>
             <div className="col-span-1 md:col-span-2 flex items-center justify-end gap-3 pt-2">
               <button type="button" onClick={() => props.setIsEditOpen(false)} className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200">إلغاء</button>
-              <button type="submit" disabled={props.isEditSubmitting} className="px-4 py-2 rounded-md bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white">{props.isEditSubmitting ? 'جارٍ الحفظ...' : 'حفظ'}</button>
+              <button type="submit" disabled={props.isEditSubmitting} className="px-6 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium transition-colors duration-200 flex items-center gap-2">
+                {props.isEditSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>جارٍ الحفظ...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>حفظ التعديلات</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
         </div>

@@ -34,6 +34,7 @@ import DashboardSidebar from '@/components/ui/DashboardSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { FeatureGate } from '@/components/ui/FeatureGate';
 import { FeatureBanner } from '@/components/ui/FeatureBanner';
+import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
 const ManagerAddExpense = dynamic(() => import('@/components/manager/ManagerAddExpense'), { ssr: false });
 const ManagerAddRevenue = dynamic(() => import('@/components/manager/ManagerAddRevenue'), { ssr: false });
 
@@ -160,6 +161,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
               </div>
             </div>
             <div className="flex  items-center space-x-3">
+              <ThemeToggleButton />
             <button
                 onClick={logout}
                 aria-label="تسجيل الخروج"
