@@ -12,24 +12,45 @@ import {
   QRCodeResponse
 } from '@/types/whatsapp';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/notify` : '/notify';
+const WA_GATEWAY_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:3001/notification';
+const MAIN_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 class WhatsAppService {
   private getAuthHeaders(): Record<string, string> {
-    // Get token from localStorage using the same key as AuthService
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    const headers: Record<string, string> = {
+    // Standalone WhatsApp server doesn't require authentication
+    return {
       'Content-Type': 'application/json',
     };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Health check method
+  async healthCheck(): Promise<boolean> {
+    try {
+      const response = await fetch(`${WA_GATEWAY_URL.replace('/notification', '')}/health`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+      });
+      const result = await response.json();
+      return response.ok && result.success !== false;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return false;
     }
-    return headers;
   }
 
-  // 1. POST /api/notify/send-single - إرسال رسالة فردية
+  // 0. POST /api/notify/send-direct - إرسال رسالة مباشرة لأي رقم (Gateway Only)
+  async sendDirectMessage(phone: string, message: string, useQueue = true): Promise<any> {
+    const response = await fetch(`${WA_GATEWAY_URL}/send-direct`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ phone, message, useQueue }),
+    });
+    return await response.json();
+  }
+
+  // 1. POST /api/whatsapp/single - إرسال رسالة فردية (Main Backend)
   async sendSingleMessage(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/single`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/single`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -37,9 +58,9 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 2. POST /api/notify/send-broadcast - إرسال رسالة عامة
+  // 2. POST /api/whatsapp/broadcast - إرسال رسالة عامة (Main Backend)
   async sendBroadcast(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/broadcast`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/broadcast`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -47,9 +68,9 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 3. POST /api/notify/auto/expiring - إرسال إشعارات انتهاء الاشتراك
+  // 3. POST /api/whatsapp/trigger-expiry - إرسال إشعارات انتهاء الاشتراك (Main Backend)
   async sendExpiringNotifications(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/expiring`, {
+    const response = await fetch(`${WA_GATEWAY_URL}/whatsapp/trigger-expiry`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -63,17 +84,43 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 4. GET /api/notify/status - حالة WhatsApp
+  // 4. GET Gateway Status - حالة WhatsApp
   async getWhatsAppStatus(): Promise<WhatsAppStatusResponse> {
-    const response = await fetch(`${BASE_URL}/status`, {
+    const response = await fetch(`${WA_GATEWAY_URL}/status`, {
       headers: this.getAuthHeaders(),
     });
-    return await response.json();
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: {
+          success: true,
+          data: {
+            isConnected: result.data.connected || false,
+            requiresQR: !result.data.connected || false,
+            mockMode: result.data.mockMode || false,
+            connectionAttempts: 0,
+            isReady: result.data.connected || false,
+            status: result.data.status || 'unknown',
+            qrCode: result.data.qrCode || null
+          }
+        }
+      };
+    }
+    
+    return result;
   }
 
-  // 5. POST /api/notify/auto/check-expiry - تشغيل فحص انتهاء الاشتراكات (Queue System)
+  // 5. POST Trigger Expiry Check - تشغيل فحص انتهاء الاشتراكات
   async triggerExpiryCheck(data?: TriggerExpiryCheckRequest): Promise<TriggerExpiryCheckResponse> {
-    const response = await fetch(`${BASE_URL}/auto/check-expiry`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/trigger-expiry`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data || {}),
@@ -81,19 +128,13 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // Old method (keep for backward compatibility)
   async runAutoExpiryCheck(data?: AutoCheckExpiryRequest): Promise<AutoCheckExpiryResponse> {
-    const response = await fetch(`${BASE_URL}/auto/check-expiry`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(data || {}),
-    });
-    return await response.json();
+    return this.triggerExpiryCheck(data as any) as any;
   }
 
-  // 6. PUT /api/notify/auto/expiry-message - تحديث رسالة الانتهاء
+  // 6. PUT Update Expiry Message - تحديث رسالة الانتهاء
   async updateExpiryMessage({ message }: ExpiryMessageUpdate): Promise<ExpiryMessageUpdateResponse> {
-    const response = await fetch(`${BASE_URL}/auto/expiry-message`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/settings/expiry-message`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ message }),
@@ -101,17 +142,36 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 7. GET /api/notify/auto/expiry-message - عرض رسالة الانتهاء الحالية
+  // 7. GET Expiry Message - عرض رسالة الانتهاء الحالية
   async getExpiryMessage(): Promise<ExpiryMessageResponse> {
-    const response = await fetch(`${BASE_URL}/auto/expiry-message`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/settings/expiry-message`, {
       headers: this.getAuthHeaders(),
     });
     return await response.json();
   }
 
-  // 8. POST /api/notify/auto/reset-expiry-message - إعادة تعيين رسالة الانتهاء إلى الافتراضية
+  // 8. POST Reset expiry message (Mock, no longer needed directly)
   async resetExpiryMessage(): Promise<any> {
-    const response = await fetch(`${BASE_URL}/auto/reset-expiry-message`, {
+    return { success: true, message: "Use the UI to update the message manually." };
+  }
+
+  // 9. GET Auto status (Mock, queue handles automatically)
+  async getAutoStatus(): Promise<any> {
+    return { success: true, data: { isRunning: true } };
+  }
+
+  // 10. POST Clear QR Session (Gateway)
+  async clearSession(): Promise<any> {
+    const response = await fetch(`${WA_GATEWAY_URL}/clear-session`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    });
+    return await response.json();
+  }
+
+  // 10.5. POST Reconnect (Gateway)
+  async reconnectSession(): Promise<any> {
+    const response = await fetch(`${WA_GATEWAY_URL}/reconnect`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({}),
@@ -119,42 +179,26 @@ class WhatsAppService {
     return await response.json();
   }
 
-  // 9. GET /api/notify/auto/status - حالة النظام التلقائي
-  async getAutoStatus(): Promise<AutoStatusResponse> {
-    const response = await fetch(`${BASE_URL}/auto/status`, {
-      headers: this.getAuthHeaders(),
-    });
-    return await response.json();
-  }
-
-  // 10. POST /api/notify/clear-session - مسح جلسة WhatsApp
-  async clearSession(): Promise<any> {
-    const response = await fetch(`${BASE_URL}/clear-session`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-    });
-    return await response.json();
-  }
-
-  // 11. GET /api/notify/qr - جلب QR Code
+  // 11. GET QR Code (Gateway)
   async getQRCode(): Promise<QRCodeResponse> {
-    const response = await fetch(`${BASE_URL}/qr`, {
+    const response = await fetch(`${WA_GATEWAY_URL}/qr`, {
+      method: 'GET',
       headers: this.getAuthHeaders(),
     });
     return await response.json();
   }
 
-  // 12. GET /api/notify/queue-status - حالة الـ Queue
+  // 12. GET Queue Status (Gateway)
   async getQueueStatus(): Promise<any> {
-    const response = await fetch(`${BASE_URL}/queue-status`, {
+    const response = await fetch(`${WA_GATEWAY_URL}/queue-status`, {
       headers: this.getAuthHeaders(),
     });
     return await response.json();
   }
 
-  // 13. PUT /api/notify/rate-limit - تحديث حد الطابور
+  // 13. PUT Update Queue Rate Limits (Gateway)
   async updateQueueLimit(data: any): Promise<any> {
-    const response = await fetch(`${BASE_URL}/rate-limit`, {
+    const response = await fetch(`${WA_GATEWAY_URL}/rate-limit`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
@@ -172,7 +216,7 @@ class WhatsAppService {
   async testConnection(): Promise<boolean> {
     try {
       const status = await this.getWhatsAppStatus();
-      return status.data.isConnected;
+      return status.data.data.isConnected;
     } catch (error) {
       console.error('Error testing connection:', error);
       return false;
@@ -181,8 +225,6 @@ class WhatsAppService {
 
   async initializeConnection(): Promise<QRCodeResponse> {
     try {
-      // First clear session
-      await this.clearSession();
       // Then get QR code
       return await this.getQRCode();
     } catch (error) {
@@ -204,7 +246,7 @@ class WhatsAppService {
       ]);
 
       return {
-        whatsapp: whatsappStatus.data.isConnected,
+        whatsapp: whatsappStatus.data.data.isConnected,
         queue: queueStatus.data.isProcessing,
         auto: autoStatus.data.isRunning
       };

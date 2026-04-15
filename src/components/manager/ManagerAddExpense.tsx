@@ -86,6 +86,7 @@ const ManagerAddExpense: React.FC = () => {
               className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600"
               value={form.date || ''}
               onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+              onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
             />
           </div>
 

@@ -460,7 +460,16 @@ export function WhatsAppQueueStatus({ className }: WhatsAppQueueStatusProps) {
     pollingRef.current = setInterval(async () => {
       pollCountRef.current += 1;
       await refetch();
-    }, 1000); // poll every 1 second
+      
+      // Stop polling if queue is empty or after 30 seconds
+      const currentProcessing = queueStatus?.data?.processingCount || 0;
+      const currentPending = queueStatus?.data?.pendingCount || 0;
+      
+      if (pollCountRef.current >= 30 || (currentProcessing === 0 && currentPending === 0)) {
+        stopPolling(sentCount + currentProcessing);
+        return;
+      }
+    }, 3000); // poll every 3 seconds
   }, [refetch]);
 
   // Stop polling when queue is done
@@ -729,6 +738,15 @@ export function WhatsAppQueueStatus({ className }: WhatsAppQueueStatusProps) {
                       className="waq-rate-input"
                     />
                   </div>
+                  <div className="waq-rate-item">
+                    <label>تأخير الدفعة (ms)</label>
+                    <input
+                      type="number" min="1000" max="10000" step="500"
+                      value={rateLimitForm.batchDelay}
+                      onChange={(e) => setRateLimitForm(prev => ({ ...prev, batchDelay: parseInt(e.target.value) || 5000 }))}
+                      className="waq-rate-input"
+                    />
+                  </div>
                 </div>
                 <div className="waq-rate-actions">
                   <button className="waq-rate-btn save" onClick={handleSaveRateLimit} disabled={editLoading}>
@@ -757,7 +775,11 @@ export function WhatsAppQueueStatus({ className }: WhatsAppQueueStatusProps) {
                 </div>
                 <div className="waq-rate-item">
                   <span>حجم الدفعة</span>
-                  <span>{queueStatus.data.rateLimit.batchSize}</span>
+                  <span>{queueStatus.data.batchSize}</span>
+                </div>
+                <div className="waq-rate-item">
+                  <span>تأخير الدفعة</span>
+                  <span>{queueStatus.data.batchDelay}ms</span>
                 </div>
               </div>
             )}

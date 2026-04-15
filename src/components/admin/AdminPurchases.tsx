@@ -242,7 +242,7 @@ const AdminPurchases = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">التاريخ والوقت</label>
-                <input type="datetime-local" className="w-full border rounded p-2 bg-gray-800 text-white" value={form.date} onChange={e=>setForm(prev=>({ ...prev, date: e.target.value }))} />
+                <input type="datetime-local" onClick={(e) => e.currentTarget.showPicker?.()}  className="w-full border rounded p-2 bg-gray-800 text-white" value={form.date} onChange={e=>setForm(prev=>({ ...prev, date: e.target.value }))} />
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-900" onClick={()=>setModalOpen(false)} disabled={saving}>إلغاء</button>

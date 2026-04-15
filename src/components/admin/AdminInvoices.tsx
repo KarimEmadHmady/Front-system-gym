@@ -969,6 +969,7 @@ const AdminInvoices: React.FC = () => {
                     type="date"
                     className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600"
                     value={(createForm.issueDate as string) || ""}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
                     onChange={(e) => setCreateForm((p) => ({ ...p, issueDate: e.target.value }))}
                     required
                   />
@@ -980,6 +981,7 @@ const AdminInvoices: React.FC = () => {
                     type="date"
                     className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600"
                     value={(createForm.dueDate as string) || ""}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
                     onChange={(e) => setCreateForm((p) => ({ ...p, dueDate: e.target.value }))}
                   />
                 </div>
@@ -1213,11 +1215,11 @@ const AdminInvoices: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">تاريخ الإصدار</label>
-                  <input type="date" className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600" value={editForm.issueDate} onChange={(e) => setEditForm((p) => ({ ...p, issueDate: e.target.value }))} required />
+                  <input type="date" className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600" onClick={(e) => e.currentTarget.showPicker?.()} value={editForm.issueDate} onChange={(e) => setEditForm((p) => ({ ...p, issueDate: e.target.value }))} required />
                 </div>
                 <div className="flex flex-col">
                   <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">تاريخ الاستحقاق</label>
-                  <input type="date" className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600" value={editForm.dueDate || ''} onChange={(e) => setEditForm((p) => ({ ...p, dueDate: e.target.value }))} />
+                  <input type="date" className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600" onClick={(e) => e.currentTarget.showPicker?.()} value={editForm.dueDate || ''} onChange={(e) => setEditForm((p) => ({ ...p, dueDate: e.target.value }))} />
                 </div>
                 <div className="flex flex-col">
                   <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">الحالة</label>

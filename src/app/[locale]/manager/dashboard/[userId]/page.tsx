@@ -27,6 +27,8 @@ import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlertIndi
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlertBadge';
 import SubscriptionAlertsSummary from '@/components/admin/SubscriptionAlertsSummary';
 import SoundManager from '@/components/admin/SoundManager';
+import { useWhatsAppActions } from '@/hooks/useWhatsApp';
+import { useRef } from 'react';
 import dynamic from 'next/dynamic';
 import ManagerReports from '@/components/manager/ManagerReports';
 import ManagerAttendanceScanner from '@/components/manager/ManagerAttendanceScanner';
@@ -47,6 +49,8 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   const t = useTranslations('ManagerDashboard');
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams?.get('tab') || 'overview');
+  const { triggerExpiryCheck } = useWhatsAppActions();
+  const hasTriggeredRef = useRef(false);
 
   // يمكنك استخدام userId هنا لجلب بيانات أو التحقق
 
@@ -54,7 +58,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.push('/');
+      router.push('/'); 
       return;
     }
 
@@ -68,6 +72,42 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
       return;
     }
   }, [isAuthenticated, user, isLoading, router, resolvedParams.userId]);
+
+  // WhatsApp auto-check for expiring subscriptions
+  useEffect(() => {
+    // Only run once when component mounts and user is authenticated manager
+    if (isAuthenticated && user?.role === 'manager' && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
+      console.log("🔍 Manager Dashboard: Checking for expiring subscriptions automatically...");
+      
+      triggerExpiryCheck({ useQueue: true })
+        .then((res: any) => {
+          console.log("✅ Manager auto-check done:", res);
+          
+          if (res?.success) {
+            if (res.queueStatus) {
+              const queued = res.queueStatus.queue || 0;
+              const completed = res.queueStatus.completed || 0;
+              
+              if (completed > 0) {
+                console.log(`📱 Manager: Sent ${completed} expiring notifications automatically`);
+              }
+              if (queued > 0) {
+                console.log(`⏳ Manager: Queued ${queued} expiring notifications for processing`);
+              }
+            } else if (res.data) {
+              const sent = res.data.sent || 0;
+              if (sent > 0) {
+                console.log(`📱 Manager: Sent ${sent} expiring notifications automatically`);
+              }
+            }
+          }
+        })
+        .catch(err => {
+          console.error("❌ Manager auto-check failed:", err);
+        });
+    }
+  }, [isAuthenticated, user]);
 
   // Sync activeTab with URL changes
   useEffect(() => {

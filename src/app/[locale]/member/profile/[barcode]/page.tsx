@@ -48,7 +48,7 @@ const MemberProfile = ({ params }: { params: Promise<{ barcode: string }> }) => 
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.push('/');
+     router.push('/'); 
       return;
     }
 

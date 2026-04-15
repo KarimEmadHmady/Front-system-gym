@@ -265,118 +265,109 @@ const ManagerUsersTable = () => {
     if (editError) setEditError(null);
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editForm.name || !editForm.email) {
-      setEditError('الرجاء ملء جميع الحقول الأساسية');
-      return;
+const handleEditSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!editForm.name || !editForm.email) {
+    setEditError('الرجاء ملء جميع الحقول الأساسية');
+    return;
+  }
+  setIsEditSubmitting(true);
+  try {
+    const { _id, createdAt, updatedAt, ...toSend } = editForm;
+
+    // الحقول الرقمية
+    const numericFields = ['balance','subscriptionFreezeDays','subscriptionFreezeUsed',
+      'loyaltyPoints','heightCm','baselineWeightKg','targetWeightKg'];
+    numericFields.forEach(field => {
+      const val = (toSend as any)[field];
+      if (val !== '' && val !== null && val !== undefined) {
+        const n = Number(val);
+        (toSend as any)[field] = isNaN(n) ? 0 : n;
+      } else {
+        (toSend as any)[field] = 0;
+      }
+    });
+
+    // Boolean
+    toSend.isEmailVerified = Boolean(toSend.isEmailVerified);
+    if (toSend.goals) {
+      toSend.goals.weightLoss = Boolean(toSend.goals.weightLoss);
+      toSend.goals.muscleGain = Boolean(toSend.goals.muscleGain);
+      toSend.goals.endurance = Boolean(toSend.goals.endurance);
     }
-    setIsEditSubmitting(true);
-    try {
-      const { _id, createdAt, updatedAt, ...toSend } = editForm;
-      toSend.balance = Number(toSend.balance) || 0;
-      toSend.subscriptionFreezeDays = Number(toSend.subscriptionFreezeDays) || 0;
-      toSend.subscriptionFreezeUsed = Number(toSend.subscriptionFreezeUsed) || 0;
-      toSend.loyaltyPoints = Number(toSend.loyaltyPoints) || 0;
-      toSend.failedLoginAttempts = Number(toSend.failedLoginAttempts) || 0;
-      toSend.isEmailVerified = Boolean(toSend.isEmailVerified);
-      toSend.isDeleted = Boolean(toSend.isDeleted);
-      if (toSend.goals) {
-        toSend.goals.weightLoss = Boolean(toSend.goals.weightLoss);
-        toSend.goals.muscleGain = Boolean(toSend.goals.muscleGain);
-        toSend.goals.endurance = Boolean(toSend.goals.endurance);
+
+    // phone و trainerId => null لو فارغين
+    ['phone', 'trainerId'].forEach(field => {
+      if (!(toSend as any)[field]) (toSend as any)[field] = null;
+    });
+
+    // barcode => omit if empty (unique field)
+    if (!(toSend as any)['barcode']) delete (toSend as any)['barcode'];
+
+    // address و avatarUrl و healthNotes => "" لو فارغين
+    ['address', 'avatarUrl', 'healthNotes'].forEach(field => {
+      if ((toSend as any)[field] === null || (toSend as any)[field] === undefined) {
+        (toSend as any)[field] = '';
       }
-      const objectIdFields = ['trainerId'];
-      objectIdFields.forEach(field => {
-        if ((toSend as any)[field] === '' || (toSend as any)[field] === undefined) {
-          (toSend as any)[field] = null;
-        }
-      });
-      const stringFields = ['phone', 'avatarUrl', 'address', 'activityLevel', 'healthNotes'];
-      stringFields.forEach(field => {
-        if ((toSend as any)[field] === '' || (toSend as any)[field] === undefined) {
-          (toSend as any)[field] = null;
-        }
-      });
-      const numberFields = ['balance','subscriptionFreezeDays','subscriptionFreezeUsed','loyaltyPoints','failedLoginAttempts','heightCm','baselineWeightKg','targetWeightKg'];
-      numberFields.forEach(field => {
-        if ((toSend as any)[field] !== undefined) {
-          (toSend as any)[field] = Number((toSend as any)[field]);
-          if (Number.isNaN((toSend as any)[field])) delete (toSend as any)[field];
-        }
-      });
-      const dateKeys: (keyof typeof toSend)[] = [
-        'dob',
-        'subscriptionStartDate',
-        'subscriptionEndDate',
-        'subscriptionRenewalReminderSent',
-        'lastPaymentDate',
-        'nextPaymentDueDate',
-      ];
-      const submitData: any = { ...toSend };
-      dateKeys.forEach((key) => {
-        if (submitData[key] && submitData[key] !== '') {
-          submitData[key] = new Date(submitData[key]);
-        } else {
-          submitData[key] = null;
-        }
-      });
-      if (submitData.metadata) {
-        Object.keys(submitData.metadata).forEach(key => {
-          if (submitData.metadata[key] === '' || submitData.metadata[key] === null || submitData.metadata[key] === undefined) {
-            delete submitData.metadata[key];
-          }
-        });
-        if (Object.keys(submitData.metadata).length === 0) {
-          delete submitData.metadata;
-        }
+    });
+
+    // activityLevel => omit if empty (enum)
+    if (!(toSend as any)['activityLevel']) delete (toSend as any)['activityLevel'];
+
+    // حقول التاريخ
+    const dateKeys = ['dob','subscriptionStartDate','subscriptionEndDate',
+      'lastPaymentDate','nextPaymentDueDate','subscriptionRenewalReminderSent'] as const;
+    dateKeys.forEach(key => {
+      const val = (toSend as any)[key];
+      if (val && val !== '') {
+        (toSend as any)[key] = new Date(val).toISOString();
+      } else {
+        delete (toSend as any)[key]; // Don't send empty date fields
       }
-      Object.keys(submitData).forEach((key) => {
-        if (submitData[key] === null || submitData[key] === undefined || submitData[key] === '') {
-          delete submitData[key];
+    });
+
+    // الحقول المسموحة فقط
+const allowedKeys = [
+  'name','email','role','phone','avatarUrl','address','balance','status','isEmailVerified',
+  'subscriptionStartDate','subscriptionEndDate','subscriptionFreezeDays','subscriptionFreezeUsed',
+  'subscriptionStatus','lastPaymentDate','nextPaymentDueDate','loyaltyPoints','membershipLevel',
+  'goals','trainerId','heightCm','baselineWeightKg','targetWeightKg','activityLevel',
+  'healthNotes','barcode','dob','subscriptionRenewalReminderSent',
+  'metadata.emergencyContact',
+  'metadata.notes'
+];
+
+    const filteredData: any = {};
+    for (const key of allowedKeys) {
+      if (key.includes('.')) {
+        // Handle nested fields like metadata.notes
+        const [parentKey, childKey] = key.split('.');
+        if ((toSend as any)[parentKey] && (toSend as any)[parentKey][childKey] !== undefined) {
+          filteredData[key] = (toSend as any)[parentKey][childKey];
         }
-      });
-      const allowedKeys = [
-        'name', 'email', 'role', 'phone', 'dob', 'avatarUrl', 'address', 'balance', 'status',
-        'subscriptionStartDate', 'subscriptionEndDate', 'subscriptionFreezeDays', 'subscriptionFreezeUsed',
-        'subscriptionStatus', 'subscriptionRenewalReminderSent', 'lastPaymentDate', 'nextPaymentDueDate',
-        'loyaltyPoints', 'membershipLevel', 'goals', 'trainerId', 'metadata',
-        // NEW gym fields
-        'heightCm', 'baselineWeightKg', 'targetWeightKg', 'activityLevel', 'healthNotes'
-      ];
-      if (!submitData.name || submitData.name.trim() === '') {
-        throw new Error('الاسم مطلوب');
+      } else if (key in (toSend as any)) {
+        // Handle regular fields
+        filteredData[key] = (toSend as any)[key];
       }
-      if (!submitData.email || submitData.email.trim() === '') {
-        throw new Error('البريد الإلكتروني مطلوب');
-      }
-      if (!['admin', 'trainer', 'member', 'manager'].includes(submitData.role)) {
-        throw new Error('الدور غير صحيح');
-      }
-      if (!['active', 'inactive', 'banned'].includes(submitData.status)) {
-        throw new Error('الحالة غير صحيحة');
-      }
-      const filteredData: any = {};
-      for (const key of allowedKeys) {
-        if (typeof submitData[key] !== 'undefined') {
-          filteredData[key] = submitData[key];
-        }
-      }
-      Object.keys(filteredData).forEach((key) => {
-        if (filteredData[key] === null || filteredData[key] === undefined) {
-          delete filteredData[key];
-        }
-      });
-      await userService.updateUser(editUser!._id, filteredData);
-      setIsEditOpen(false);
-      setRefresh(r => !r);
-      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم تعديل المستخدم بنجاح' } }));
-    } catch (err: any) {
-      setEditError(err.message || 'حدث خطأ أثناء التعديل');
-    } finally {
-      setIsEditSubmitting(false);
     }
-  };
+    await userService.updateUser(editUser!._id, filteredData);
+    setIsEditOpen(false);
+    setRefresh(r => !r);
+    window.dispatchEvent(new CustomEvent('toast', { 
+      detail: { type: 'success', message: 'تم تعديل المستخدم بنجاح' } 
+    }));
+  } catch (err: any) {
+    console.error('Error updating user:', err);
+    let errorMessage = 'حدث خطأ أثناء التعديل';
+    if (err?.response?.data?.message) errorMessage = err.response.data.message;
+    else if (err?.message?.includes('E11000 duplicate key error')) {
+      errorMessage = 'الباركود مستخدم بالفعل. يرجى إدخال باركود فريد.';
+    } else if (err?.message) errorMessage = err.message;
+    setEditError(errorMessage);
+  } finally {
+    setIsEditSubmitting(false);
+  }
+};
 
   const openViewUser = async (id: string) => {
     setIsViewOpen(true);
@@ -414,7 +405,7 @@ const ManagerUsersTable = () => {
       setRefresh(r => !r);
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم تغيير الدور بنجاح' } }));
     } catch {
-      setRoleError('حدث خطأ أثناء تغيير الدور');
+      setRoleError('حدث خطأ يمكن تغير الادوار للاعضاء و المدربين فقط');
     } finally {
       setIsRoleSubmitting(false);
     }
@@ -522,7 +513,7 @@ const ManagerUsersTable = () => {
         canEdit={hasPermission('users:write')}
         canChangeRole={hasPermission('users:write')}
         canDelete={true} // دائماً يمكن الحذف للمانجر
-        canHardDelete={false}
+        canHardDelete={true}
         handleEdit={handleEdit}
         handleChangeRole={handleChangeRole}
         openDeleteModal={(id: string) => openDeleteModal(id, 'soft')}

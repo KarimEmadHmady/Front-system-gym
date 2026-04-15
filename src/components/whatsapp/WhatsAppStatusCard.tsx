@@ -104,6 +104,18 @@ const styles = `
     font-size: 12px;
     font-weight: 600;
   }
+  .wa-badge-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+  }
   .wa-dot-pulse {
     width: 7px; height: 7px;
     border-radius: 50%;
@@ -120,6 +132,12 @@ const styles = `
     border-radius: 50%;
     background: #fbbf24;
     animation: waPulse 2s infinite;
+  }
+  .wa-dot-red {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: waPulse 1.5s infinite;
   }
   @keyframes waPulse {
     0%, 100% { opacity: 1; transform: scale(1); }
@@ -185,7 +203,23 @@ const styles = `
     font-size: 12.5px;
     color: rgba(251, 191, 36, 0.85);
     margin: 0;
-    line-height: 1.6;
+    line-height: 1.4;
+  }
+  .wa-alert-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .wa-alert-error p {
+    font-size: 12.5px;
+    color: rgba(239, 68, 68, 0.9);
+    margin: 0;
+    line-height: 1.4;
   }
   .wa-qr-text {
     font-size: 13px;
@@ -254,12 +288,39 @@ const styles = `
 `;
 
 export function WhatsAppStatusCard({ className }: WhatsAppStatusCardProps) {
-  const { status, loading, isConnected, mockMode, requiresQR, refetch, autoRefresh, setAutoRefresh } = useWhatsAppStatus();
-  const { initializeConnection, loading: connectionLoading, hasQR, qrCode } = useWhatsAppConnection();
+  const { status, loading, isConnected, mockMode, requiresQR, refetch } = useWhatsAppStatus();
+  const { initializeConnection, loading: connectionLoading, hasQR, qrCode, refreshQR, error: connectionError } = useWhatsAppConnection();
+  
+  // Check if service is unavailable
+  const isServiceUnavailable = connectionError?.includes('service is not available') || 
+                                connectionError?.includes('QR Code not available');
+
+  // Auto-initialize QR when disconnected and service is available - but limit attempts
+  useEffect(() => {
+    // Only try to get QR if WhatsApp is NOT connected AND requires QR
+    if (!isConnected && requiresQR && !connectionLoading && !hasQR && !isServiceUnavailable) {
+      console.log('Auto-initializing QR connection...');
+      
+      // Add a small delay to avoid immediate attempts on component load
+      const timer = setTimeout(() => {
+        initializeConnection().catch(err => {
+          console.error('Auto QR initialization failed:', err);
+          // Don't show error to user for auto-attempts, just log it
+        });
+      }, 1000); // 1 second delay
+      
+      return () => clearTimeout(timer);
+    } else if (isConnected && hasQR) {
+      // Clear QR if WhatsApp becomes connected
+      console.log('WhatsApp is connected, clearing QR code...');
+      // The QR should be cleared automatically when connection is established
+    } else if (isConnected && !requiresQR) {
+      console.log('WhatsApp is connected and does not require QR, skipping initialization');
+    }
+  }, [isConnected, requiresQR, connectionLoading, hasQR, initializeConnection, isServiceUnavailable]);
 
   const handleConnect = async () => {
     try {
-      console.log('Handle connect clicked');
       await initializeConnection();
     } catch (error) {
       console.error('Failed to initialize connection:', error);
@@ -280,6 +341,14 @@ export function WhatsAppStatusCard({ className }: WhatsAppStatusCardProps) {
         <span className="wa-badge-connected">
           <span className="wa-dot-pulse" />
           متصل
+        </span>
+      );
+    }
+    if (isServiceUnavailable) {
+      return (
+        <span className="wa-badge-error">
+          <span className="wa-dot-red" />
+          الخدمة غير متوفرة
         </span>
       );
     }
@@ -339,7 +408,8 @@ export function WhatsAppStatusCard({ className }: WhatsAppStatusCardProps) {
           </div>
         )}
 
-        {requiresQR && !isConnected && (
+        
+        {(!isConnected && (requiresQR || qrCode?.data?.qrCode)) && (
           <div>
             <p className="wa-qr-text">تحتاج لمسح رمز QR للاتصال بـ WhatsApp</p>
             {qrCode?.data?.qrCode ? (
@@ -349,9 +419,8 @@ export function WhatsAppStatusCard({ className }: WhatsAppStatusCardProps) {
               </div>
             ) : (
               <div className="wa-qr-container">
-                {/* Test QR code with sample data */}
                 <QRCodeDisplay value="https://wa.me/201234567890" size={200} />
-                <p className="wa-qr-message">Test QR Code (Backend not providing QR data)</p>
+                <p className="wa-qr-message">جاري تحميل رمز QR...</p>
               </div>
             )}
             <button className="wa-connect-btn" onClick={handleConnect} disabled={connectionLoading}>
@@ -361,8 +430,8 @@ export function WhatsAppStatusCard({ className }: WhatsAppStatusCardProps) {
           </div>
         )}
 
-        {status?.data.connectionAttempts !== undefined && status.data.connectionAttempts > 0 &&  (
-          <p className="wa-attempts">محاولات الاتصال: {status.data.connectionAttempts}</p>
+        {status?.data?.data?.connectionAttempts !== undefined && status.data.data.connectionAttempts > 0 && (
+          <p className="wa-attempts">محاولات الاتصال: {status.data.data.connectionAttempts}</p>
         )}
       </div>
     </>

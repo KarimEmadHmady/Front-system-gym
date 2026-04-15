@@ -25,10 +25,11 @@ const ManagerAddRevenue: React.FC = () => {
     (async () => {
       try {
         const res = await userService.getUsers({ limit: 200 });
-        const list = Array.isArray(res) ? res : [];
+        const list = res.data || [];
+        console.log('Loaded users:', list.length); // Debug log
         setUsers(list);
-      } catch {
-        // ignore
+      } catch (error) {
+        console.error('Failed to load users:', error); // Debug log
       }
     })();
   }, []);
@@ -82,7 +83,7 @@ const ManagerAddRevenue: React.FC = () => {
 
           <div className="flex flex-col">
             <label className="text-sm text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-            <input type="date" className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600" value={form.date || ''} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+            <input type="date" className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-600" value={form.date || ''} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} onClick={(e) => (e.target as HTMLInputElement).showPicker?.()} />
           </div>
 
           <div className="flex flex-col">

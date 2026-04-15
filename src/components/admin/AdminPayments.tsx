@@ -328,11 +328,11 @@ const AdminPayments = () => {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="block text-sm font-medium mb-1">التاريخ</label>
-                  <input type="date" className="w-full border rounded p-2 bg-gray-800 text-white" value={form.date} onChange={e=>setForm((prev:any)=>({...prev, date:e.target.value}))} required />
+                  <input type="date" onClick={(e) => e.currentTarget.showPicker?.()} className="w-full border rounded p-2 bg-gray-800 text-white" value={form.date} onChange={e=>setForm((prev:any)=>({...prev, date:e.target.value}))} required />
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-medium mb-1">الساعة</label>
-                  <input type="time" className="w-full border rounded p-2 bg-gray-800 text-white" value={form.time || ''} onChange={e=>setForm((prev:any)=>({...prev, time:e.target.value}))} />
+                  <input type="time" onClick={(e) => e.currentTarget.showPicker?.()} className="w-full border rounded p-2 bg-gray-800 text-white" value={form.time || ''} onChange={e=>setForm((prev:any)=>({...prev, time:e.target.value}))} />
                 </div>
               </div>
               <div>

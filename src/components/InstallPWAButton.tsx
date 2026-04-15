@@ -83,11 +83,11 @@ const InstallPWAButton: React.FC = () => {
   return (
     <>
       <div
-        className="fixed z-50 flex tems-end justify-center w-full px-2 pb-6 pointer-events-none sm:justify-end" dir="ltr"
+        className="fixed z-50 flex tems-end justify-center w-full px-2 pb-6 pointer-events-none sm:justify-end lg:hidden " dir="ltr"
         style={{ bottom: -11, right: -7 }}
       >
         <div
-          className="bg-white shadow-2xl rounded-xl border border-gray-200 w-[90%] sm:max-w-xs max-w-full pointer-events-auto relative flex flex-row items-stretch p-2 gap-1 sm:mx-6 w-72"
+          className="bg-white shadow-2xl rounded-xl border border-gray-200 w-[90%] sm:max-w-xs max-w-full pointer-events-auto relative flex flex-row items-stretch p-2 gap-1 sm:mx-6 w-72 "
         >
           <div className="flex items-center gap-2 w-[100%]  justify-center">
             <span className="text-xl">📲</span>
@@ -122,7 +122,7 @@ const InstallPWAButton: React.FC = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-end justify-end z-50 px-2 pb-6 sm:justify-center sm:items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-end justify-end z-50 px-2 pb-6 sm:justify-center sm:items-center lg:hidden dir-ltr">
           <div
             className="bg-white shadow-2xl rounded-xl border border-gray-200 w-full sm:max-w-xs max-w-full pointer-events-auto relative flex flex-col items-stretch p-4 gap-2 w-72"
           >
@@ -169,7 +169,6 @@ const InstallPWAButton: React.FC = () => {
       )}
     </>
   );
-  
 };
 
 

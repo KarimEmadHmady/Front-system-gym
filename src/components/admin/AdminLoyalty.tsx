@@ -761,6 +761,7 @@ const AdminLoyalty = () => {
                   <input
                     type="date"
                     value={redemptionsFilter.startDate}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
                     onChange={(e) => setRedemptionsFilter(prev => ({ ...prev, startDate: e.target.value }))}
                     className="w-full rounded border px-1.5 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
@@ -770,6 +771,7 @@ const AdminLoyalty = () => {
                   <input
                     type="date"
                     value={redemptionsFilter.endDate}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
                     onChange={(e) => setRedemptionsFilter(prev => ({ ...prev, endDate: e.target.value }))}
                     className="w-full rounded border px-1.5 py-1.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   />

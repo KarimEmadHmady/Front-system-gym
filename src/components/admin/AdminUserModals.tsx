@@ -524,7 +524,7 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
             </div>
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">تاريخ إرسال تذكير التجديد</label>
-              <input type="datetime-local" name="subscriptionRenewalReminderSent" value={props.editForm.subscriptionRenewalReminderSent || ''} onChange={props.handleEditChange} className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
+              <input type="datetime-local" name="subscriptionRenewalReminderSent" onClick={(e) => e.currentTarget.showPicker?.()}  value={props.editForm.subscriptionRenewalReminderSent || ''} onChange={props.handleEditChange} className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
             </div>
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">تاريخ آخر دفع</label>
@@ -624,7 +624,7 @@ const AdminUserModals: React.FC<AdminUserModalsProps> = (props) => {
             {/* ملاحظات فقط */}
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">ملاحظات</label>
-              <textarea name="metadata.notes" value={props.editForm.metadata?.notes || ''} onChange={e => props.handleEditChange(e as any)} className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
+              <textarea name="metadata.notes" value={props.editForm.metadata?.notes || ''} onChange={(e) => props.handleEditChange(e as any)} className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
             </div>
             {/* مدرب المستخدم */}
             <div>

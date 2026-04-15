@@ -29,39 +29,42 @@ const MemberSessionsHistory = () => {
     const token = localStorage.getItem('token');
     const authToken = localStorage.getItem('authToken');
     
-    console.log('Raw user from localStorage:', user);
-    console.log('Token from localStorage:', token);
-    console.log('AuthToken from localStorage:', authToken);
+    // Try to get from authToken first (has correct ObjectId)
+    if (authToken) {
+      try {
+        const tokenData = JSON.parse(atob(authToken.split('.')[1]));
+        const id = tokenData.userId || tokenData._id || tokenData.id;
+        if (id && /^[0-9a-fA-F]{24}$/.test(id)) {
+          return id;
+        }
+      } catch (error) {
+        console.error('Error parsing authToken:', error);
+      }
+    }
     
+    // Try to get from user data
     if (user) {
       try {
         const userData = JSON.parse(user);
-        console.log('Parsed user data:', userData);
-        return userData._id || userData.id;
+        const id = userData._id || userData.id;
+        if (id && /^[0-9a-fA-F]{24}$/.test(id)) {
+          return id;
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
       }
     }
     
-    // Try to get from token if available
+    // Try to get from token (has invalid id: 5)
     if (token) {
       try {
         const tokenData = JSON.parse(atob(token.split('.')[1]));
-        console.log('Token data:', tokenData);
-        return tokenData.userId || tokenData._id || tokenData.id;
+        const id = tokenData.userId || tokenData._id || tokenData.id;
+        if (id && /^[0-9a-fA-F]{24}$/.test(id)) {
+          return id;
+        }
       } catch (error) {
         console.error('Error parsing token:', error);
-      }
-    }
-    
-    // Try to get from authToken if available
-    if (authToken) {
-      try {
-        const tokenData = JSON.parse(atob(authToken.split('.')[1]));
-        console.log('AuthToken data:', tokenData);
-        return tokenData.userId || tokenData._id || tokenData.id;
-      } catch (error) {
-        console.error('Error parsing authToken:', error);
       }
     }
     
@@ -92,18 +95,24 @@ const loadData = async () => {
     const sessionsArr = toArray(result);
     setSessions(sessionsArr);
 
-    // جلب أسماء المدربين
-    const uniqueTrainerIds = Array.from(new Set(sessionsArr.map((s: any) => s.trainerId).filter(Boolean)));
-    const namesMap: Record<string, string> = {};
-    await Promise.all(uniqueTrainerIds.map(async (id) => {
-      try {
-        const trainer = await userService.getUser(id as string);
-        namesMap[id as string] = trainer?.name || 'غير محدد';
-      } catch {
-        namesMap[id as string] = 'غير محدد';
-      }
-    }));
-    setTrainerNames(namesMap);
+    // Extract trainer ID properly
+    try {
+      const uniqueTrainerIds = Array.from(new Set(sessionsArr.map((s: any) => getTrainerId(s.trainerId)).filter(Boolean)));
+      const namesMap: Record<string, string> = {};
+      await Promise.all(uniqueTrainerIds.map(async (id) => {
+        try {
+          const trainer = await userService.getUser(id as string);
+          namesMap[id as string] = trainer?.name || 'undefined';
+        } catch {
+          namesMap[id as string] = 'undefined';
+        }
+      }));
+      setTrainerNames(namesMap);
+    } catch (trainerError) {
+      console.warn('Error loading trainer names:', trainerError);
+      // Set empty trainer names but still show sessions
+      setTrainerNames({});
+    }
 
     if (!sessionsArr.length) {
       showWarning('لا توجد حصص', 'لم يتم العثور على حصص مرتبطة بهذا العضو');
@@ -117,6 +126,14 @@ const loadData = async () => {
     setLoading(false);
   }
 };
+
+  const getTrainerId = (trainer: any): string => {
+    if (!trainer) return '';
+    if (typeof trainer === 'string') return trainer;
+    if (typeof trainer === 'object' && trainer._id) return trainer._id;
+    if (typeof trainer === 'object' && trainer.id) return trainer.id;
+    return '';
+  };
 
   const getTrainerName = (trainerId: string) => {
     if (!trainerId) return 'غير محدد';

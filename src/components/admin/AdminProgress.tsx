@@ -616,7 +616,7 @@ const AdminProgress = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-                  <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-900 dark:text-white" />
+                  <input type="date" onClick={(e) => e.currentTarget.showPicker?.()} value={formDate} onChange={e => setFormDate(e.target.value)} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-900 dark:text-white" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">الوزن (كجم)</label>
@@ -800,7 +800,7 @@ const AdminProgress = () => {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-                <input type="date" value={editProgressData.date} onChange={e => setEditProgressData(d => d ? { ...d, date: e.target.value } : d)} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
+                <input type="date" value={editProgressData.date} onClick={(e) => e.currentTarget.showPicker?.()} onChange={e => setEditProgressData(d => d ? { ...d, date: e.target.value } : d)} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">الوزن (كجم)</label>
@@ -984,7 +984,7 @@ const AdminProgress = () => {
               </div>
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-                <input type="date" value={addProgressData?.date || ''} onChange={e => setAddProgressData(d => ({ ...(d || {userId:'',date:'',weight:'',bodyFat:'',notes:''}), date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
+                <input type="date" value={addProgressData?.date || ''} onClick={(e) => e.currentTarget.showPicker?.()} onChange={e => setAddProgressData(d => ({ ...(d || {userId:'',date:'',weight:'',bodyFat:'',notes:''}), date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">الوزن (كجم)</label>
@@ -1044,7 +1044,7 @@ const AdminProgress = () => {
               </div>
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-                <input type="date" value={addMemberProgressData.date} onChange={e => setAddMemberProgressData(d => ({ ...d, date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
+                <input type="date" value={addMemberProgressData.date} onClick={(e) => e.currentTarget.showPicker?.()} onChange={e => setAddMemberProgressData(d => ({ ...d, date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
               </div>
               <div>
                 <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">الوزن (كجم)</label>

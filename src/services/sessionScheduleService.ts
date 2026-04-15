@@ -79,18 +79,26 @@ export class SessionScheduleService extends BaseService {
       const response = await this.apiCall<SessionSchedule[]>('');
       return Array.isArray(response) ? response : [];
     } catch (error) {
-      console.error('Error in getAllSessions:', error);
+      return [];
+    }
+  }
+
+  // Retrieve sessions for a user (as a member or trainer)
+  async getSessionsByUser(userId: string): Promise<SessionSchedule[]> {
+    try {
+      const response = await this.apiCall<SessionSchedule[]>(`/${userId}`);
+      return response;
+    } catch (error: any) {
+      // If there's an error with trainerId validation, return empty array
+      if (error.message?.includes('Cast to ObjectId failed') && error.message?.includes('trainerId')) {
+        console.warn('Backend has invalid trainerId data. Please fix the database records with invalid trainerId values.');
+        return [];
+      }
       throw error;
     }
   }
 
-  // جلب الجلسات لمستخدم (كعضو أو مدرب)
-  async getSessionsByUser(userId: string): Promise<SessionSchedule[]> {
-    const response = await this.apiCall<SessionSchedule[]>(`/${userId}`);
-    return response;
-  }
-
-  // إنشاء جلسة جديدة
+  // Create a new session
   async createSession(userId: string, session: Partial<SessionSchedule>): Promise<SessionSchedule> {
     const response = await this.apiCall<SessionSchedule>(`/${userId}`, {
       method: 'POST',
@@ -99,7 +107,7 @@ export class SessionScheduleService extends BaseService {
     return response;
   }
 
-  // تحديث جلسة
+  // Update a session
   async updateSession(id: string, session: Partial<SessionSchedule>): Promise<SessionSchedule> {
     const response = await this.apiCall<SessionSchedule>(`/${id}`, {
       method: 'PUT',
@@ -108,7 +116,7 @@ export class SessionScheduleService extends BaseService {
     return response;
   }
 
-  // حذف جلسة
+  // Delete a session
   async deleteSession(id: string): Promise<void> {
     await this.apiCall<void>(`/${id}`, {
       method: 'DELETE',

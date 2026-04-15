@@ -461,7 +461,7 @@ const TrainerProgressOverview = () => {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-                      <input type="date" value={progressAddData.date} onChange={e => setProgressAddData((d: typeof progressAddData) => ({ ...d, date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
+                      <input type="date" value={progressAddData.date} onClick={(e) => e.currentTarget.showPicker?.()} onChange={e => setProgressAddData((d: typeof progressAddData) => ({ ...d, date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">الوزن (كجم)</label>
@@ -612,7 +612,7 @@ const TrainerProgressOverview = () => {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">التاريخ</label>
-                      <input type="date" value={progressEditData.date} onChange={e => setProgressEditData((d: typeof progressEditData) => ({ ...d, date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
+                      <input type="date" value={progressEditData.date} onClick={(e) => e.currentTarget.showPicker?.()} onChange={e => setProgressEditData((d: typeof progressEditData) => ({ ...d, date: e.target.value }))} className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white" />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">الوزن (كجم)</label>

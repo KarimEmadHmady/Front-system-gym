@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { whatsappService } from '@/services/whatsapp';
 import { 
   WhatsAppStatusResponse,
@@ -6,52 +6,104 @@ import {
   AutoStatusResponse,
   TriggerExpiryCheckRequest,
   ExpiryMessageResponse,
-  QRCodeResponse
+  QRCodeResponse,
+
 } from '@/types/whatsapp';
+
+// Global loading states to prevent multiple simultaneous requests
+const globalLoadingStates = {
+  status: false,
+  qr: false
+};
+
+// Debounce timers
+const debounceTimers = {
+  status: null as NodeJS.Timeout | null,
+  qr: null as NodeJS.Timeout | null
+};
 
 export function useWhatsAppStatus() {
   const [status, setStatus] = useState<WhatsAppStatusResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(false); // Disabled by default
+  const [autoRefresh, setAutoRefresh] = useState(true); // Enabled by default
+
+  const rawIsConnected = status?.data?.data?.isConnected;
+  const rawMockMode = status?.data?.data?.mockMode;
+  const rawRequiresQR = status?.data?.data?.requiresQR;
 
   const fetchStatus = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await whatsappService.getWhatsAppStatus();
-      setStatus(response);
-    } catch (err) {
-      console.error('Failed to fetch WhatsApp status:', err);
-      // Don't set error for network issues, just use mock data
-      setError(null);
-    } finally {
-      setLoading(false);
+    // Prevent multiple simultaneous requests
+    if (globalLoadingStates.status) {
+      console.log('⏳ Status request already in progress, skipping...');
+      return;
     }
+
+    // Clear existing debounce timer
+    if (debounceTimers.status) {
+      clearTimeout(debounceTimers.status);
+    }
+
+    // Debounce the request
+    debounceTimers.status = setTimeout(async () => {
+      globalLoadingStates.status = true;
+      setLoading(true);
+      setError(null);
+      try {
+        console.log('🔄 Fetching WhatsApp status...');
+        const response = await whatsappService.getWhatsAppStatus();
+        setStatus(response);
+        console.log('✅ Status fetched:', response?.data?.data?.isConnected ? 'Connected' : 'Not Connected');
+      } catch (err) {
+        console.error('Failed to fetch WhatsApp status:', err);
+        // Don't set error for network issues, just use mock data
+        setError(null);
+      } finally {
+        globalLoadingStates.status = false;
+        setLoading(false);
+      }
+    }, 1000); // 1 second debounce
   }, []);
 
+  const parseBoolean = (value: unknown): boolean => {
+    if (value === true || value === 'true' || value === 1 || value === '1') return true;
+    if (value === false || value === 'false' || value === 0 || value === '0') return false;
+    return false;
+  };
+
   useEffect(() => {
-    fetchStatus();
+    // Initial fetch only if not already loading
+    if (!globalLoadingStates.status) {
+      fetchStatus();
+    }
     
     // Only set up interval if auto-refresh is enabled and document is visible
     let interval: NodeJS.Timeout | null = null;
     
     const handleVisibilityChange = () => {
-      if (document.hidden || !autoRefresh) {
-        // Tab is not visible or auto-refresh disabled, clear interval
+      if (document.hidden || !autoRefresh || parseBoolean(rawIsConnected)) {
+        // Tab is not visible, auto-refresh disabled, or WhatsApp is connected, clear interval
         if (interval) {
           clearInterval(interval);
           interval = null;
         }
       } else {
-        // Tab is visible and auto-refresh enabled, set up interval
-        interval = setInterval(fetchStatus, 10000);
+        // Tab is visible, auto-refresh enabled, and WhatsApp is not connected, set up interval
+        interval = setInterval(() => {
+          if (!globalLoadingStates.status) {
+            fetchStatus();
+          }
+        }, 15000); // Increased to 15 seconds to reduce load
       }
     };
     
-    // Initial setup
-    if (!document.hidden && autoRefresh) {
-      interval = setInterval(fetchStatus, 10000);
+    // Initial setup - only start interval if not connected
+    if (!document.hidden && autoRefresh && !parseBoolean(rawIsConnected)) {
+      interval = setInterval(() => {
+        if (!globalLoadingStates.status) {
+          fetchStatus();
+        }
+      }, 15000); // Increased to 15 seconds
     }
     
     // Listen for visibility changes
@@ -61,17 +113,7 @@ export function useWhatsAppStatus() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (interval) clearInterval(interval);
     };
-  }, [fetchStatus, autoRefresh]);
-
-  const rawIsConnected = status?.data?.isConnected;
-  const rawMockMode = status?.data?.mockMode;
-  const rawRequiresQR = status?.data?.requiresQR;
-
-  const parseBoolean = (value: unknown): boolean => {
-    if (value === true || value === 'true' || value === 1 || value === '1') return true;
-    if (value === false || value === 'false' || value === 0 || value === '0') return false;
-    return false;
-  };
+  }, [fetchStatus, autoRefresh, parseBoolean(rawIsConnected)]);
 
   return {
     status,
@@ -389,41 +431,154 @@ export function useWhatsAppConnection() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const refreshQR = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (globalLoadingStates.qr) {
+      console.log('⏳ QR request already in progress, skipping...');
+      return;
+    }
+
+    // Clear existing debounce timer
+    if (debounceTimers.qr) {
+      clearTimeout(debounceTimers.qr);
+    }
+
+    // Debounce the request
+    debounceTimers.qr = setTimeout(async () => {
+      globalLoadingStates.qr = true;
+      try {
+        console.log('🔄 Refreshing QR code...');
+        const response = await whatsappService.getQRCode();
+        console.log('Refresh QR Response:', response); // Debug log
+        
+        // Check if service is completely unavailable (only when response is unsuccessful)
+        if (!response?.success && (
+          response?.data?.message?.includes('service is not responding') || 
+          response?.data?.message?.includes('running on port')
+        )) {
+          setError('WhatsApp service is not available. Please check if the service is running on port 3001.');
+          return;
+        }
+        
+        // Handle field name mismatch: backend returns 'qr', frontend expects 'qrCode'
+        const qrCode = (response as any)?.data?.qr || response?.data?.qrCode;
+        
+        if (response?.success && qrCode) {
+          // Transform response to expected format
+          const transformedResponse = {
+            ...response,
+            data: {
+              ...response.data,
+              qrCode: qrCode,
+              message: response.data.message || 'Scan this QR code with WhatsApp'
+            }
+          };
+          setQrCode(transformedResponse);
+          console.log('✅ QR code refreshed successfully');
+        }
+      } catch (e) {
+        console.error('Refresh QR Error:', e);
+      } finally {
+        globalLoadingStates.qr = false;
+      }
+    }, 1000); // 1 second debounce
+  }, []);
+
   const initializeConnection = useCallback(async () => {
+    // Prevent multiple simultaneous initialization attempts
+    if (globalLoadingStates.qr) {
+      console.log('QR initialization already in progress, skipping...');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    globalLoadingStates.qr = true;
+    
     try {
-      console.log('Initializing WhatsApp connection...');
-      
-      // First clear session
-      await whatsappService.clearSession();
-      
-      // Wait a bit then try to get QR code
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Try to get QR code
-      const response = await whatsappService.getQRCode();
-      console.log('QR Code Response:', response);
-      console.log('QR Code Data:', response?.data);
-      console.log('QR Code String:', response?.data?.qrCode);
-      
-      // If no QR code, try again after delay
-      if (!response?.data?.qrCode) {
-        console.log('No QR code yet, trying again...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const retryResponse = await whatsappService.getQRCode();
-        console.log('Retry QR Code Response:', retryResponse);
-        setQrCode(retryResponse);
-      } else {
-        setQrCode(response);
+      // First check if service is available
+      console.log('Checking WhatsApp service health...');
+      const isHealthy = await whatsappService.healthCheck();
+      if (!isHealthy) {
+        const errorMsg = 'WhatsApp service is not available. Please check if the service is running on port 3001.';
+        setError(errorMsg);
+        console.error('Health check failed:', errorMsg);
+        return;
       }
+
+      console.log('WhatsApp service is healthy, checking connection status...');
+
+      // Check if WhatsApp is already connected by getting status first
+      try {
+        const statusResponse = await whatsappService.getWhatsAppStatus();
+        const isConnected = statusResponse?.data?.data?.isConnected;
+        
+        if (isConnected) {
+          console.log('WhatsApp is already connected, no QR code needed');
+          setLoading(false);
+          return null; // No QR needed when already connected
+        }
+      } catch (statusErr) {
+        console.log('Could not check status, proceeding with QR attempt...');
+      }
+
+      console.log('WhatsApp not connected, attempting to get QR code...');
+
+      // Try to get QR for 9 seconds only (3 attempts)
+      let attempts = 0;
       
-      return response;
+      while (attempts < 3) {
+        try {
+          console.log(`QR attempt ${attempts + 1}/3...`);
+          const response = await whatsappService.getQRCode();
+          console.log('QR Response:', response); // Debug log
+          
+          // Handle field name mismatch: backend returns 'qr', frontend expects 'qrCode'
+          const qrCode = (response as any)?.data?.qr || response?.data?.qrCode;
+          
+          if (response?.success && qrCode) {
+            // Transform response to expected format
+            const transformedResponse = {
+              ...response,
+              data: {
+                ...response.data,
+                qrCode: qrCode,
+                message: response.data.message || 'Scan this QR code with WhatsApp'
+              }
+            };
+            setQrCode(transformedResponse);
+            console.log('QR code initialized successfully');
+            setLoading(false);
+            return transformedResponse;
+          } else {
+            console.log(`QR not ready yet, response:`, response);
+          }
+        } catch (attemptErr) {
+          console.error(`QR attempt ${attempts + 1} failed:`, attemptErr);
+        }
+        
+        if (attempts < 2) { // Don't wait after last attempt
+          await new Promise(r => setTimeout(r, 3000));
+        }
+        attempts++;
+      }
+
+      // If we get here, all attempts failed
+      const errorMsg = 'QR Code not available. WhatsApp may be already connected or initializing.';
+      setError(errorMsg);
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     } catch (err) {
-      console.error('Failed to initialize connection:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize connection');
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Initialize connection error:', errorMessage);
+      
+      // Don't set error for service unavailable (already handled above)
+      if (!errorMessage.includes('service is not available')) {
+        setError(errorMessage);
+        throw err;
+      }
     } finally {
+      globalLoadingStates.qr = false;
       setLoading(false);
     }
   }, []);
@@ -436,6 +591,19 @@ export function useWhatsAppConnection() {
       setQrCode(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clear session');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const reconnectSession = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await whatsappService.reconnectSession();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reconnect session');
       throw err;
     } finally {
       setLoading(false);
@@ -457,7 +625,9 @@ export function useWhatsAppConnection() {
     error,
     initializeConnection,
     clearSession,
+    reconnectSession,
     testConnection,
+    refreshQR,
     hasQR: !!qrCode?.data?.qrCode
   };
 }
@@ -496,21 +666,35 @@ export function useWhatsAppActions() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendSingleMessage = useCallback(async (data: { identifier: string; isPhone: boolean; message: string; useQueue?: boolean }) => {
+  const sendDirectMessage = useCallback(async (phone: string, message: string, useQueue = true): Promise<any> => {
     setLoading(true);
     setError(null);
     try {
-      const response = await whatsappService.sendSingleMessage(data);
+      const response = await whatsappService.sendDirectMessage(phone, message, useQueue);
       return response;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
+      setError(err instanceof Error ? err.message : 'Failed to send direct message');
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const sendBroadcast = useCallback(async (data: { message: string; useQueue?: boolean }) => {
+  const sendSingleMessage = useCallback(async (data: any): Promise<any> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await whatsappService.sendSingleMessage(data);
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send single message');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const sendBroadcast = useCallback(async (data: any): Promise<any> => {
     setLoading(true);
     setError(null);
     try {
@@ -524,27 +708,31 @@ export function useWhatsAppActions() {
     }
   }, []);
 
-  const sendExpiringNotifications = useCallback(async ({ message }: { message: string }) => {
+  const sendExpiringNotifications = useCallback(async (data: any): Promise<any> => {
     setLoading(true);
     setError(null);
     try {
-      const response = await whatsappService.sendExpiringNotifications({ message });
+      const response = await whatsappService.sendExpiringNotifications(data);
       return response;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send notifications');
+      setError(err instanceof Error ? err.message : 'Failed to send expiring notifications');
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // New method with Queue System
+  // New method with Queue System - use useCallback to prevent re-creation
   const triggerExpiryCheck = useCallback(async (data?: TriggerExpiryCheckRequest) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await whatsappService.triggerExpiryCheck(data);
-      return response;
+      // Add check to prevent duplicate notifications
+      const checkResponse = await whatsappService.triggerExpiryCheck({
+        ...data,
+        checkAlreadyNotified: true // Add this flag
+      });
+      return checkResponse;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to trigger expiry check');
       throw err;
@@ -585,6 +773,7 @@ export function useWhatsAppActions() {
   return {
     loading,
     error,
+    sendDirectMessage,
     sendSingleMessage,
     sendBroadcast,
     sendExpiringNotifications,

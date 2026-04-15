@@ -28,6 +28,8 @@ import AdminWhatsAppNotifications from '@/components/admin/WhatsAppNotifications
 import AdminMembershipCards from '@/components/admin/AdminMembershipCards';
 import AdminSearch from '@/components/admin/AdminSearch';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
+import { useWhatsAppActions } from '@/hooks/useWhatsApp';
+import { useRef, useCallback } from 'react';
 import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlertIndicator';
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlertBadge';
 import SubscriptionAlertsSummary from '@/components/admin/SubscriptionAlertsSummary';
@@ -51,13 +53,15 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
   const t = useTranslations('AdminDashboard');
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams?.get('tab') || 'overview');
+  const { triggerExpiryCheck } = useWhatsAppActions();
+  const hasTriggeredRef = useRef(false);
 
   // يمكنك استخدام userId هنا لجلب بيانات أو التحقق
 
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) {
-      router.push('/');
+    router.push('/'); 
       return;
     }
     if (user?.role !== 'admin') {
@@ -70,6 +74,42 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
       return;
     }
   }, [isAuthenticated, user, isLoading, router, resolvedParams.userId]);
+
+  // WhatsApp auto-check for expiring subscriptions
+  useEffect(() => {
+    // Only run once when component mounts and user is authenticated admin
+    if (isAuthenticated && user?.role === 'admin' && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
+      console.log("🔍 Admin Dashboard: Checking for expiring subscriptions automatically...");
+      
+      triggerExpiryCheck({ useQueue: true })
+        .then((res: any) => {
+          console.log("✅ Admin auto-check done:", res);
+          
+          if (res?.success) {
+            if (res.queueStatus) {
+              const queued = res.queueStatus.queue || 0;
+              const completed = res.queueStatus.completed || 0;
+              
+              if (completed > 0) {
+                console.log(`📱 Admin: Sent ${completed} expiring notifications automatically`);
+              }
+              if (queued > 0) {
+                console.log(`⏳ Admin: Queued ${queued} expiring notifications for processing`);
+              }
+            } else if (res.data) {
+              const sent = res.data.sent || 0;
+              if (sent > 0) {
+                console.log(`📱 Admin: Sent ${sent} expiring notifications automatically`);
+              }
+            }
+          }
+        })
+        .catch(err => {
+          console.error("❌ Admin auto-check failed:", err);
+        });
+    }
+  }, [isAuthenticated, user]);
 
   // Keep state in sync if URL query changes externally
   useEffect(() => {
@@ -321,13 +361,13 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
     </FeatureGate>
   )}
 
-  {activeTab === 'whatsapp' && (
+   {activeTab === 'whatsapp' && (
     <FeatureGate feature="whatsapp" fallback={<FeatureBanner type="locked" role="admin" />}>
       <div className="space-y-8">
         <AdminWhatsAppNotifications />
       </div>
     </FeatureGate>
-  )}
+  )} 
 
   {activeTab === 'progress' && (
     <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" role="admin" />}>

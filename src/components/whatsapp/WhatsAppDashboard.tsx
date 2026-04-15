@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WhatsAppStatusCard } from './WhatsAppStatusCard';
 import { WhatsAppQueueStatus } from './WhatsAppQueueStatus';
 import { SendMessageForm } from './SendMessageForm';
+import { DirectMessageForm } from './DirectMessageForm';
 import { BroadcastForm } from './BroadcastForm';
 import { ExpiryMessageEditor } from './ExpiryMessageEditor';
 import WhatsAppErrorBoundary from './WhatsAppErrorBoundary';
@@ -11,17 +12,13 @@ import { useAutoStatus } from '@/hooks/useWhatsApp';
 import { useExpiryMessage } from '@/hooks/useWhatsApp';
 import { 
   Settings, 
-  Play, 
-  Pause, 
   RefreshCw,
   MessageSquare,
   Users,
   Smartphone,
   Activity,
-  AlertTriangle,
   Bell,
-  CheckCircle2,
-  AlertCircle
+
 } from 'lucide-react';
 
 interface WhatsAppDashboardProps {
@@ -625,6 +622,7 @@ const styles = `
 const TABS = [
   { id: 'overview', label: 'نظرة عامة', icon: Activity },
   { id: 'single',   label: 'رسالة فردية', icon: MessageSquare },
+  { id: 'direct',    label: 'رسالة مباشرة', icon: Smartphone },
   { id: 'broadcast',label: 'رسالة عامة', icon: Users },
   { id: 'expiry',   label: 'انتهاء الاشتراك', icon: Bell },
   { id: 'settings', label: 'الإعدادات', icon: Settings },
@@ -634,6 +632,7 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const { isConnected, mockMode } = useWhatsAppStatus();
   const { sendExpiringNotifications, triggerExpiryCheck, runAutoExpiryCheck, loading } = useWhatsAppActions();
+  const hasTriggeredRef = useRef(false);
   const { isRunning, lastCheck } = useAutoStatus();
   const { currentMessage } = useExpiryMessage();
   const [expiryLoading, setExpiryLoading] = useState(false);
@@ -646,55 +645,57 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
   // Determine if auto system is active - either running directly or queue is enabled (which is the normal state)
   const isAutoSystemActive = isRunning || useQueue;
 
-  const handleSendExpiring = async () => {
-    try { 
-      setExpiryLoading(true);
-      setExpiryNotification('جاري إرسال إشعارات انتهاء الاشتراك...');
-      setExpirySuccess(null);
-      setSentCount(null);
+  // Automatic expiry check when component mounts
+  useEffect(() => {
+    // Only run once when component mounts and WhatsApp is connected
+    if (!hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
       
-      const response = await sendExpiringNotifications({ message: currentMessage });
+      // Wait a bit for connection to stabilize, then check
+      const timer = setTimeout(() => {
+        if (isConnected) {
+          console.log("Checking for expiring subscriptions automatically...");
+          
+          triggerExpiryCheck({ useQueue: true, checkAlreadyNotified: true })
+            .then((res: any) => {
+              console.log("Auto-check done:", res);
+              
+              // Handle both queue and direct response structures
+              if (res?.success) {
+                // Queue response structure
+                if (res.queueStatus) {
+                  const queued = res.queueStatus.queue || 0;
+                  const completed = res.queueStatus.completed || 0;
+                  
+                  if (completed > 0) {
+                    console.log('Sent ' + completed + ' expiring notifications automatically');
+                  }
+                  if (queued > 0) {
+                    console.log('Queued ' + queued + ' expiring notifications for processing');
+                  }
+                }
+                // Direct response structure
+                else if (res.data) {
+                  const sent = res.data.sent || 0;
+                  const total = res.data.total || 0;
+                  
+                  if (sent > 0) {
+                    console.log('Sent ' + sent + ' out of ' + total + ' expiring notifications automatically');
+                  }
+                }
+              }
+            })
+            .catch(err => {
+              console.error("Auto-check failed:", err);
+            });
+        }
+      }, 2000); // Wait 2 seconds for connection to stabilize
       
-      // Extract success info from response
-      if (response?.success) {
-        const sent = response.data?.sent || response.sent || 0;
-        const failed = response.data?.failed || response.failed || 0;
-        const total = response.data?.total || response.total || sent + failed;
-        
-        setExpirySuccess(true);
-        setSentCount(sent);
-        setExpiryNotification(
-          sent > 0 
-            ? `✅ تم إرسال ${sent} رسالة بنجاح${failed > 0 ? ` (${failed} فشلت)` : ''}` 
-            : '⚠️ لم يتم إرسال أي رسائل'
-        );
-      } else {
-        setExpirySuccess(false);
-        setExpiryNotification('❌ فشل إرسال الإشعارات');
-      }
-      
-      // Trigger auto-refresh in queue status
-      window.dispatchEvent(new CustomEvent('whatsapp-expiry-action', {
-        detail: { action: 'send-expiring' }
-      }));
-      
-      setTimeout(() => {
-        setExpiryNotification(null);
-        setExpirySuccess(null);
-        setSentCount(null);
-      }, 5000);
-    } catch (e) { 
-      console.error(e); 
-      setExpirySuccess(false);
-      setExpiryNotification('❌ فشل إرسال الإشعارات');
-      setTimeout(() => {
-        setExpiryNotification(null);
-        setExpirySuccess(null);
-      }, 3000);
-    } finally {
-      setExpiryLoading(false);
+      return () => clearTimeout(timer);
     }
-  };
+  }, []); // Empty dependency array - run only once on mount
+
+
   
   const handleAutoCheck = async () => {
     try { 
@@ -882,15 +883,8 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
                   </div>
                 </div>
 
-                <div className="wad-grid-3">
-                  <button
-                    className="wad-action-btn primary"
-                    onClick={handleSendExpiring}
-                    disabled={expiryLoading || loading || !isConnected}
-                  >
-                    <MessageSquare size={15} />
-                    {expiryLoading ? 'جاري الإرسال...' : 'إرسال إشعارات الانتهاء'}
-                  </button>
+                <div className="wad-grid-2">
+
                   <button
                     className="wad-action-btn outline"
                     onClick={handleAutoCheck}
@@ -915,6 +909,12 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
           {activeTab === 'single' && (
             <WhatsAppErrorBoundary>
               <SendMessageForm onSuccess={handleSuccess} />
+            </WhatsAppErrorBoundary>
+          )}
+
+          {activeTab === 'direct' && (
+            <WhatsAppErrorBoundary>
+              <DirectMessageForm onSuccess={handleSuccess} />
             </WhatsAppErrorBoundary>
           )}
 
@@ -943,10 +943,6 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
               <div className="wad-expiry-card">
                 <p className="wad-expiry-title">الإجراءات</p>
                 <div className="wad-actions-col">
-                  <button className="wad-action-btn primary" onClick={handleSendExpiring} disabled={loading || !isConnected}>
-                    <MessageSquare size={15} />
-                    إرسال إشعارات الانتهاء الآن
-                  </button>
                   <button className="wad-action-btn outline" onClick={handleAutoCheck} disabled={loading || !isConnected}>
                     <RefreshCw size={15} />
                     تشغيل الفحص التلقائي

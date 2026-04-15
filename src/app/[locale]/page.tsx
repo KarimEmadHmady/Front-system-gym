@@ -51,21 +51,48 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.identifier || !formData.password) {
-      setLocalError('الرجاء ملء جميع الحقول');
+    // Basic validation
+    if (!formData.identifier || !formData.password) { // Changed from formData.email
+      setLocalError('الرجاء إدخال البريد الإلكتروني أو رقم الهاتف وكلمة المرور'); // More specific Arabic
       return;
     }
+
+    // Basic format validation
+    if (formData.identifier.length < 3) {
+      setLocalError('البريد الإلكتروني أو رقم الهاتف يجب أن يكون 3 أحرف على الأقل');
+      return;
+    }
+
+    if (formData.password.length < 4) {
+      setLocalError('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
+      return;
+    }
+
+    // Removed email-specific validation
+    // if (!formData.email.includes('@')) {
+    //   setLocalError('الرجاء إدخال بريد إلكتروني صالح');
+    //   return;
+    // }
 
     setIsSubmitting(true);
     setLocalError(null);
 
     try {
-      const result = await login(formData);
+      const result = await login(formData); // formData now contains identifier and password
       if (!result.success) {
-        setLocalError(result.error || 'فشل تسجيل الدخول');
+        // More specific error messages based on common scenarios
+        if (result.error?.includes('password') || result.error?.includes('كلمة')) {
+          setLocalError('كلمة المرور غير صحيحة. يرجى التحقق والمحاولة مرة أخرى');
+        } else if (result.error?.includes('user') || result.error?.includes('not found') || result.error?.includes('غير موجود')) {
+          setLocalError('البريد الإلكتروني أو رقم الهاتف غير مسجل. يرجى التحقق من البيانات أو إنشاء حساب جديد');
+        } else if (result.error?.includes('invalid') || result.error?.includes('صالح')) {
+          setLocalError('بيانات الدخول غير صحيحة. يرجى التحقق من البريد الإلكتروني أو رقم الهاتف وكلمة المرور');
+        } else {
+          setLocalError('فشل تسجيل الدخول. يرجى التحقق من بياناتك والمحاولة مرة أخرى');
+        }
       }
     } catch (error) {
-      setLocalError('حدث خطأ غير متوقع');
+      setLocalError('حدث خطأ في الاتصال. يرجى التحقق من الإنترنت والمحاولة مرة أخرى');
     } finally {
       setIsSubmitting(false);
     }

@@ -9,7 +9,7 @@ import SubscriptionAlertSettings from "./SubscriptionAlertSettings";
 import { getAuthToken } from "@/lib/api";
 import { UserService } from "@/services/userService";
 import VideoTutorial from "../VideoTutorial";
-import { useGymBranding } from "@/contexts/GymBrandingContext";
+// import { useGymBranding } from "@/contexts/GymBrandingContext";
 import { BackupManager } from "./BackupManager";
 
 // FileInput component for image uploads
@@ -69,7 +69,7 @@ const FileInput = ({
 );
 
 const AdminSettings = () => {
-  const { refresh: refreshBranding } = useGymBranding();
+  // const { refresh: refreshBranding } = useGymBranding();
   const [settings, setSettings] = useState<GymSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -213,7 +213,7 @@ if (currentPassword || newPassword || confirmNewPassword) {
       setSettings(updated);
       setUploadedLogo(undefined); // Clear uploaded file after successful save
 
-      void refreshBranding();
+      // void refreshBranding();
 
       window.dispatchEvent(
         new CustomEvent("toast", {

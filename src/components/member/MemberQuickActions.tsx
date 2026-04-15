@@ -20,9 +20,9 @@ const MemberQuickActions = () => {
   const searchParams = useSearchParams();
 
   const actions: QuickAction[] = [
-    { id: 'attendance', title: 'الحضور', icon: '📝', color: 'green' },
+    { id: 'attendance', title: 'حضورى', icon: '📝', color: 'green' },
     { id: 'payments', title: 'مدفوعات', icon: '💵', color: 'yellow' },
-    { id: 'subscription', title: 'الاشتراك', icon: '📅', color: 'blue' },
+    { id: 'subscription', title: 'اشتراكى', icon: '📅', color: 'blue' },
     { id: 'purchases', title: 'مشتريات', icon: '🛒', color: 'orange' },
     { id: 'sessions', title: t('Tabs.sessions'), icon: '🏋️', color: 'purple' },
     { id: 'plans', title: t('Tabs.plans'), icon: '📋', color: 'pink' },

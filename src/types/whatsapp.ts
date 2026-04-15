@@ -19,11 +19,16 @@ export interface ExpiringNotificationRequest {
 export interface WhatsAppStatusResponse {
   success: boolean;
   data: {
-    isConnected: boolean;
-    qrCode: string | null;
-    requiresQR: boolean;
-    mockMode: boolean;
-    connectionAttempts: number;
+    success: boolean;
+    data: {
+      isConnected: boolean;
+      isReady?: boolean;
+      status?: string;
+      qrCode?: string | null;
+      requiresQR: boolean;
+      mockMode: boolean;
+      connectionAttempts: number;
+    };
   };
 }
 
@@ -51,6 +56,8 @@ export interface QueueStatus {
   sentCount: number;
   pendingCount: number;
   processingCount: number;
+  batchSize?: number;
+  batchDelay?: number;
 }
 
 export interface QueueStatusResponse {
@@ -131,6 +138,7 @@ export interface AutoStatusResponse {
 export interface TriggerExpiryCheckRequest {
   useQueue?: boolean;           // optional - default true
   messageTemplate?: string;     // optional - default message
+  checkAlreadyNotified?: boolean;
 }
 
 // Queue Response (when useQueue: true)

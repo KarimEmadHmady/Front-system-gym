@@ -65,6 +65,11 @@ const AdminUsersTable = () => {
     createdAt: '',
     updatedAt: '',
     barcode: '',
+    subscriptionRenewalReminderSent: '',
+    metadata: {
+      notes: '',
+      emergencyContact: ''
+    }
   });
   const [isEditSubmitting, setIsEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -390,6 +395,11 @@ const AdminUsersTable = () => {
       createdAt: user.createdAt ? (user.createdAt instanceof Date ? user.createdAt.toLocaleString('ar-EG') : user.createdAt) : '',
       updatedAt: user.updatedAt ? (user.updatedAt instanceof Date ? user.updatedAt.toLocaleString('ar-EG') : user.updatedAt) : '',
       barcode: (user as any).barcode ?? '',
+      subscriptionRenewalReminderSent: datetimeToInputString((user as any).subscriptionRenewalReminderSent),
+      metadata: {
+        notes: (user as any).metadata?.notes || '',
+        emergencyContact: (user as any).metadata?.emergencyContact || ''
+      }
 
     });
     setEditError(null);
@@ -397,14 +407,10 @@ const AdminUsersTable = () => {
   };
 
   // تحديث handleEditChange ليشمل كل الحقول
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
-    // Debug log for subscriptionRenewalReminderSent
-    if (name === 'subscriptionRenewalReminderSent') {
-      console.log('subscriptionRenewalReminderSent changed:', value);
-    }
-    
+        
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       
@@ -440,148 +446,109 @@ const AdminUsersTable = () => {
     if (editError) setEditError(null);
   };
 
-  // تحديث handleEditSubmit ليشمل كل الحقول
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editForm.name || !editForm.email) {
-      setEditError('الرجاء ملء جميع الحقول الأساسية');
-      return;
-    }
-    setIsEditSubmitting(true);
-    try {
-      // فقط الحقول القابلة للتعديل
-      const {
-        _id, createdAt, updatedAt, // نستثنيهم
-        ...toSend
-      } = editForm;
-      // تحويل القيم الرقمية والتأكد من صحة البيانات
-      toSend.balance = Number(toSend.balance) || 0;
-      toSend.subscriptionFreezeDays = Number(toSend.subscriptionFreezeDays) || 0;
-      toSend.subscriptionFreezeUsed = Number(toSend.subscriptionFreezeUsed) || 0;
-      toSend.loyaltyPoints = Number(toSend.loyaltyPoints) || 0;
-      
-      // التأكد من صحة القيم المنطقية
-      toSend.isEmailVerified = Boolean(toSend.isEmailVerified);
-      
-      // التأكد من صحة goals
-      if (toSend.goals) {
-        toSend.goals.weightLoss = Boolean(toSend.goals.weightLoss);
-        toSend.goals.muscleGain = Boolean(toSend.goals.muscleGain);
-        toSend.goals.endurance = Boolean(toSend.goals.endurance);
-      }
-      
-      // معالجة الحقول التي تحتاج ObjectId (تحويل القيم الفارغة إلى null)
-      const objectIdFields = ['trainerId'];
-      objectIdFields.forEach(field => {
-        if ((toSend as any)[field] === '' || (toSend as any)[field] === undefined) {
-          (toSend as any)[field] = null;
-        }
-      });
-      
-      // معالجة الحقول النصية الفارغة
-      const stringFields = ['phone', 'avatarUrl', 'address'];
-      stringFields.forEach(field => {
-        if ((toSend as any)[field] === '' || (toSend as any)[field] === undefined) {
-          (toSend as any)[field] = null;
-        }
-      });
-      // تجهيز submitData مع تحويل الحقول الفارغة إلى null وتحويل التواريخ
-      const dateKeys: (keyof typeof toSend)[] = [
-        'dob',
-        'subscriptionStartDate',
-        'subscriptionEndDate',
-        'lastPaymentDate',
-        'nextPaymentDueDate',
-      ];
-      const submitData: any = { ...toSend };
-      
-      // تحويل حقول التاريخ من strings إلى Date objects
-      dateKeys.forEach((key) => {
-        if (submitData[key] && submitData[key] !== '') {
-          submitData[key] = new Date(submitData[key]);
-        } else {
-          submitData[key] = null;
-        }
-      });
-      
-      // التعامل مع metadata بشكل صحيح (فقط notes)
-      if (submitData.metadata) {
-        // حذف الحقول الفارغة في metadata
-        Object.keys(submitData.metadata).forEach(key => {
-          if (submitData.metadata[key] === '' || submitData.metadata[key] === null || submitData.metadata[key] === undefined) {
-            delete submitData.metadata[key];
-          }
-        });
-        
-        // إذا كان metadata فارغ تماماً، احذفه
-        if (Object.keys(submitData.metadata).length === 0) {
-          delete submitData.metadata;
-        }
-      }
-      // حذف الحقول التي قيمتها null أو undefined أو string فارغ
-      Object.keys(submitData).forEach((key) => {
-        if (submitData[key] === null || submitData[key] === undefined || submitData[key] === '') {
-          delete submitData[key];
-        }
-      });
-      // تحويل الحقول الرقمية (بما فيها حقول الجيم)
-      ['balance','subscriptionFreezeDays','subscriptionFreezeUsed','loyaltyPoints','heightCm','baselineWeightKg','targetWeightKg'].forEach((field) => {
-        if (submitData[field] !== undefined && submitData[field] !== '') {
-          submitData[field] = Number(submitData[field]);
-          if (Number.isNaN(submitData[field])) delete submitData[field];
-        }
-      });
-      // فلترة الحقول المسموحة فقط حسب schema
-      const allowedKeys = [
-        'name','email','role','phone','avatarUrl','address','balance','status','isEmailVerified',
-        'subscriptionStartDate','subscriptionEndDate','subscriptionFreezeDays','subscriptionFreezeUsed','subscriptionStatus',
-        'lastPaymentDate','nextPaymentDueDate','loyaltyPoints','membershipLevel','goals','trainerId',
-        // NEW gym fields
-        'heightCm','baselineWeightKg','targetWeightKg','activityLevel','healthNotes',
-        'barcode' // Add barcode to allowed keys
-      ];
-      const filteredData: any = {};
-      for (const key of allowedKeys) {
-        if (typeof submitData[key] !== 'undefined') {
-          filteredData[key] = submitData[key];
-        }
-      }
-      // لا ترسل null أو undefined
-      Object.keys(filteredData).forEach((key) => {
-        if (filteredData[key] === null || filteredData[key] === undefined) {
-          delete filteredData[key];
-        }
-      });
-      // سجل البيانات المرسلة
-      console.log('editForm original:', editForm);
-      console.log('submitData before filtering:', submitData);
-      console.log('editForm sent:', filteredData);
-      await userService.updateUser(editUser!._id, filteredData);
-      setIsEditOpen(false);
-      setRefresh(r => !r);
-      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم تعديل المستخدم بنجاح' } }));
-    } catch (err: any) {
-      console.error('Error updating user:', err);
-      
-      // استخراج الرسالة الدقيقة من API إذا وجدت
-      let errorMessage = 'حدث خطأ أثناء التعديل';
-      
-      if (err?.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message && err.message.includes('E11000 duplicate key error')) {
-        errorMessage = 'الباركود مستخدم بالفعل. يرجى إدخال باركود فريد.';
-      } else if (err?.message) {
-        errorMessage = err.message;
-      } else if (typeof err === 'string') {
-        errorMessage = err;
-      }
-      
-      setEditError(errorMessage);
-    } finally {
-      setIsEditSubmitting(false);
-    }
-  };
+const handleEditSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!editForm.name || !editForm.email) {
+    setEditError('الرجاء ملء جميع الحقول الأساسية');
+    return;
+  }
+  setIsEditSubmitting(true);
+  try {
+    const { _id, createdAt, updatedAt, ...toSend } = editForm;
 
+    // الحقول الرقمية
+    const numericFields = ['balance','subscriptionFreezeDays','subscriptionFreezeUsed',
+      'loyaltyPoints','heightCm','baselineWeightKg','targetWeightKg'];
+    numericFields.forEach(field => {
+      const val = (toSend as any)[field];
+      if (val !== '' && val !== null && val !== undefined) {
+        const n = Number(val);
+        (toSend as any)[field] = isNaN(n) ? 0 : n;
+      } else {
+        (toSend as any)[field] = 0;
+      }
+    });
+
+    // Boolean
+    toSend.isEmailVerified = Boolean(toSend.isEmailVerified);
+    if (toSend.goals) {
+      toSend.goals.weightLoss = Boolean(toSend.goals.weightLoss);
+      toSend.goals.muscleGain = Boolean(toSend.goals.muscleGain);
+      toSend.goals.endurance = Boolean(toSend.goals.endurance);
+    }
+
+    // phone و trainerId => null لو فارغين
+    ['phone', 'trainerId'].forEach(field => {
+      if (!(toSend as any)[field]) (toSend as any)[field] = null;
+    });
+
+    // barcode => omit if empty (unique field)
+    if (!(toSend as any)['barcode']) delete (toSend as any)['barcode'];
+
+    // address و avatarUrl و healthNotes => "" لو فارغين
+    ['address', 'avatarUrl', 'healthNotes'].forEach(field => {
+      if ((toSend as any)[field] === null || (toSend as any)[field] === undefined) {
+        (toSend as any)[field] = '';
+      }
+    });
+
+    // activityLevel => omit if empty (enum)
+    if (!(toSend as any)['activityLevel']) delete (toSend as any)['activityLevel'];
+
+    // حقول التاريخ
+    const dateKeys = ['dob','subscriptionStartDate','subscriptionEndDate',
+      'lastPaymentDate','nextPaymentDueDate','subscriptionRenewalReminderSent'] as const;
+    dateKeys.forEach(key => {
+      const val = (toSend as any)[key];
+      if (val && val !== '') {
+        (toSend as any)[key] = new Date(val).toISOString();
+      } else {
+        delete (toSend as any)[key]; // Don't send empty date fields
+      }
+    });
+
+    // الحقول المسموحة فقط
+const allowedKeys = [
+  'name','email','role','phone','avatarUrl','address','balance','status','isEmailVerified',
+  'subscriptionStartDate','subscriptionEndDate','subscriptionFreezeDays','subscriptionFreezeUsed',
+  'subscriptionStatus','lastPaymentDate','nextPaymentDueDate','loyaltyPoints','membershipLevel',
+  'goals','trainerId','heightCm','baselineWeightKg','targetWeightKg','activityLevel',
+  'healthNotes','barcode','dob','subscriptionRenewalReminderSent',
+  'metadata.emergencyContact',
+  'metadata.notes'
+];
+
+    const filteredData: any = {};
+    for (const key of allowedKeys) {
+      if (key.includes('.')) {
+        // Handle nested fields like metadata.notes
+        const [parentKey, childKey] = key.split('.');
+        if ((toSend as any)[parentKey] && (toSend as any)[parentKey][childKey] !== undefined) {
+          filteredData[key] = (toSend as any)[parentKey][childKey];
+        }
+      } else if (key in (toSend as any)) {
+        // Handle regular fields
+        filteredData[key] = (toSend as any)[key];
+      }
+    }
+    await userService.updateUser(editUser!._id, filteredData);
+    setIsEditOpen(false);
+    setRefresh(r => !r);
+    window.dispatchEvent(new CustomEvent('toast', { 
+      detail: { type: 'success', message: 'تم تعديل المستخدم بنجاح' } 
+    }));
+  } catch (err: any) {
+    console.error('Error updating user:', err);
+    let errorMessage = 'حدث خطأ أثناء التعديل';
+    if (err?.response?.data?.message) errorMessage = err.response.data.message;
+    else if (err?.message?.includes('E11000 duplicate key error')) {
+      errorMessage = 'الباركود مستخدم بالفعل. يرجى إدخال باركود فريد.';
+    } else if (err?.message) errorMessage = err.message;
+    setEditError(errorMessage);
+  } finally {
+    setIsEditSubmitting(false);
+  }
+};
   // تحديث الحذف ليظهر notification عصري (مؤقتاً استخدم window.confirm وwindow.dispatchEvent)
   const handleDelete = async (id: string) => {
     if (!window.confirm('هل أنت متأكد من حذف المستخدم؟')) return;
@@ -791,7 +758,7 @@ const AdminUsersTable = () => {
         canEdit={hasPermission('users:write')}
         canChangeRole={hasPermission('users:write')}
         canDelete={hasPermission('users:delete')}
-        canHardDelete={currentUser?.role === 'admin'}
+        canHardDelete={currentUser?.role === 'admin' || currentUser?.role === 'manager'}
         handleEdit={handleEdit}
         handleChangeRole={handleChangeRole}
         openDeleteModal={openDeleteModal}

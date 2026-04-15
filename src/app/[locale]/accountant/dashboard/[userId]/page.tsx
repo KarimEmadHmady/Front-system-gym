@@ -32,7 +32,7 @@ const AccountantDashboard = ({ params }: { params: Promise<{ userId: string }> }
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) {
-      router.push('/');
+    router.push('/');
       return;
     }
     if (user?.role !== 'accountant') {

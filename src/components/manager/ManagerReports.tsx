@@ -117,9 +117,10 @@ const ManagerReports = () => {
     setSessionsLoading(true);
     setSessionsError(null);
     const service = new SessionScheduleService();
-    service.getAllSessions()
+    service.getSessions({ limit: 100 }) // Use getSessions with limit instead of getAllSessions
       .then((data) => {
-        setSessions(data);
+        const sessionsArray = Array.isArray(data) ? data : (data?.data || []);
+        setSessions(sessionsArray);
       })
       .catch(() => setSessionsError('فشل تحميل بيانات الحصص'))
       .finally(() => setSessionsLoading(false));

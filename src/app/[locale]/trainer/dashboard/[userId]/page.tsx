@@ -46,7 +46,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.push('/');
+     router.push('/'); 
       return;
     }
 
@@ -148,7 +148,7 @@ const TrainerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen theme-gradient-bg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <DashboardSidebar
         tabs={tabs}
         activeTab={activeTab}

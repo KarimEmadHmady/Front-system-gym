@@ -339,7 +339,7 @@ const ManagerSettings: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">تاريخ الميلاد</label>
-                <input type="date" name="dob" value={form.dob} onChange={handleChange} className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
+                <input type="date" name="dob" onClick={(e) => e.currentTarget.showPicker?.()} value={form.dob} onChange={handleChange} className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white" />
               </div>
               <div>
                 <FileInput

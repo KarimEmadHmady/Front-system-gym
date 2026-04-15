@@ -598,11 +598,11 @@ const TrainerPlansOverview = () => {
               </div>
               <div>
                 <label className="block text-sm mb-1">تاريخ البداية</label>
-                <input type="date" className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-900" value={formStartDate} onChange={(e)=>setFormStartDate(e.target.value)} placeholder="تاريخ البداية" />
+                <input type="date" className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-900" onClick={(e) => e.currentTarget.showPicker?.()} value={formStartDate} onChange={(e)=>setFormStartDate(e.target.value)} placeholder="تاريخ البداية" />
               </div>
               <div>
                 <label className="block text-sm mb-1">تاريخ النهاية</label>
-                <input type="date" className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-900" value={formEndDate} onChange={(e)=>setFormEndDate(e.target.value)} placeholder="تاريخ النهاية" />
+                <input type="date" className="w-full border rounded px-3 py-2 bg-white dark:bg-gray-900" onClick={(e) => e.currentTarget.showPicker?.()} value={formEndDate} onChange={(e)=>setFormEndDate(e.target.value)} placeholder="تاريخ النهاية" />
               </div>
             </div>
             <div className="mt-3">
