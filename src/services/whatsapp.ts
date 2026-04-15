@@ -40,7 +40,7 @@ class WhatsAppService {
 
   // 0. POST /api/notify/send-direct - إرسال رسالة مباشرة لأي رقم (Gateway Only)
   async sendDirectMessage(phone: string, message: string, useQueue = true): Promise<any> {
-    const response = await fetch(`${WA_GATEWAY_URL}/send-direct`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/send-direct`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ phone, message, useQueue }),
@@ -162,7 +162,7 @@ class WhatsAppService {
 
   // 10. POST Clear QR Session (Gateway)
   async clearSession(): Promise<any> {
-    const response = await fetch(`${WA_GATEWAY_URL}/clear-session`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/clear-session`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
     });
@@ -171,7 +171,7 @@ class WhatsAppService {
 
   // 10.5. POST Reconnect (Gateway)
   async reconnectSession(): Promise<any> {
-    const response = await fetch(`${WA_GATEWAY_URL}/reconnect`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/reconnect`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({}),
@@ -190,7 +190,7 @@ class WhatsAppService {
 
   // 12. GET Queue Status (Gateway)
   async getQueueStatus(): Promise<any> {
-    const response = await fetch(`${WA_GATEWAY_URL}/queue-status`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/queue-status`, {
       headers: this.getAuthHeaders(),
     });
     return await response.json();
@@ -198,7 +198,7 @@ class WhatsAppService {
 
   // 13. PUT Update Queue Rate Limits (Gateway)
   async updateQueueLimit(data: any): Promise<any> {
-    const response = await fetch(`${WA_GATEWAY_URL}/rate-limit`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/rate-limit`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),
