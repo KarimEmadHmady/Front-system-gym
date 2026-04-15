@@ -126,7 +126,7 @@ export function AutoBackupManager({ onOpenSettings }: AutoBackupManagerProps) {
 
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal, loading]);
+  }, [showModal]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 

@@ -45,28 +45,34 @@ export function useBackup(): UseBackupReturn {
     }
   }, []);
 
-  const runManualBackup = useCallback(async (): Promise<ManualBackupResponse | null> => {
-    try {
-      setManualLoading(true);
-      setError(null);
-      // ✅ الـ service بتعمل التنزيل داخلياً — مفيش downloadBackup منفصلة
-      const data = await backupService.manualBackup();
+const runManualBackup = useCallback(async (): Promise<ManualBackupResponse | null> => {
+  try {
+    setManualLoading(true);
+    setError(null);
+    const data = await backupService.manualBackup();
 
-      setNotification({
-        type: 'success',
-        message: `✅ تم عمل نسخة يدوية — ${data.backup.fileName} (${data.backup.sizeMB} MB)`,
-      });
+    // ✅ حدّث الـ checkResult عشان الـ UI يتغير
+    setCheckResult(prev => prev ? {
+      ...prev,
+      shouldBackup: true,
+      backup: data.backup,
+    } : null);
 
-      return data;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'فشل عمل النسخة الاحتياطية';
-      setError(message);
-      setNotification({ type: 'error', message: `❌ ${message}` });
-      return null;
-    } finally {
-      setManualLoading(false);
-    }
-  }, []);
+    setNotification({
+      type: 'success',
+      message: `✅ تم عمل نسخة يدوية — ${data.backup.fileName} (${data.backup.sizeMB} MB)`,
+    });
+
+    return data;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'فشل عمل النسخة الاحتياطية';
+    setError(message);
+    setNotification({ type: 'error', message: `❌ ${message}` });
+    return null;
+  } finally {
+    setManualLoading(false);
+  }
+}, []);
 
   return {
     backups,

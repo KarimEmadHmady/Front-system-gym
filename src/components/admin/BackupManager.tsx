@@ -86,41 +86,41 @@ export function BackupManager({ className = '' }: BackupManagerProps) {
       )}
 
       {/* ── Next / Last Backup Info ── */}
-      {checkResult && (
-        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  {checkResult.shouldBackup
-                    ? 'تم إنشاء نسخة احتياطية اليوم'
-                    : 'النسخة الاحتياطية القادمة'}
-                </p>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  {checkResult.shouldBackup
-                    ? 'تم التنزيل مباشرة على جهازك'
-                    : `في: ${getNextBackupDate()}`}
-                </p>
+        {checkResult && (
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {checkResult.shouldBackup
+                      ? '⚠️ مطلوب نسخة احتياطية اليوم'    // ✅ صياغة صح
+                      : 'النسخة الاحتياطية القادمة'}
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    {checkResult.shouldBackup
+                      ? 'اضغط "إنشاء نسخة احتياطية يدوية" لتنزيل النسخة'  // ✅ وجّه المستخدم
+                      : `في: ${getNextBackupDate()}`}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Stats — only when a backup was done today */}
-            {checkResult.shouldBackup && (
-              <div className="flex items-center gap-4 text-sm text-blue-700 dark:text-blue-300">
-                <span className="flex items-center gap-1">
-                  <HardDrive className="w-4 h-4" />
-                  {checkResult.backup.sizeMB} MB
-                </span>
-                <span className="flex items-center gap-1">
-                  <FileText className="w-4 h-4" />
-                  {checkResult.backup.totalDocuments} سجل
-                </span>
-              </div>
-            )}
+              {/* Stats bs lo fe backup f3lan (ba3d manual backup) */}
+              {checkResult.shouldBackup && checkResult.backup && (
+                <div className="flex items-center gap-4 text-sm text-blue-700 dark:text-blue-300">
+                  <span className="flex items-center gap-1">
+                    <HardDrive className="w-4 h-4" />
+                    {checkResult.backup.sizeMB} MB
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-4 h-4" />
+                    {checkResult.backup.totalDocuments?.toString() || '0'} 
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* ── Actions ── */}
       <div className="flex flex-wrap gap-3 mb-6">

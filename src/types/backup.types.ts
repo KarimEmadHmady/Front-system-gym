@@ -6,7 +6,7 @@ export interface BackupFile {
   createdAt: string;
 }
 
-export type CheckReason = 'not_backup_day' | 'already_done_today' | 'backup_day';
+export type CheckReason = 'not_backup_day' | 'already_done_today' | 'manual_action_required'; 
 
 interface BackupCheckBase {
   success: boolean;
@@ -23,9 +23,8 @@ export interface BackupCheckSkipped extends BackupCheckBase {
 export interface BackupCheckDone extends BackupCheckBase {
   shouldBackup: true;
   message: string;
-  backup: BackupDetails;
+  backup?: BackupDetails; 
 }
-
 export type BackupCheckResponse = BackupCheckSkipped | BackupCheckDone;
 
 export interface BackupDetails {
