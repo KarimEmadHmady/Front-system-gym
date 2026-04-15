@@ -86,7 +86,7 @@ class WhatsAppService {
 
   // 4. GET Gateway Status - حالة WhatsApp
   async getWhatsAppStatus(): Promise<WhatsAppStatusResponse> {
-    const response = await fetch(`${WA_GATEWAY_URL}/status`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/status`, {
       headers: this.getAuthHeaders(),
     });
     
@@ -181,7 +181,7 @@ class WhatsAppService {
 
   // 11. GET QR Code (Gateway)
   async getQRCode(): Promise<QRCodeResponse> {
-    const response = await fetch(`${WA_GATEWAY_URL}/qr`, {
+    const response = await fetch(`${MAIN_API_URL}/whatsapp/qr`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
