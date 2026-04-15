@@ -12,7 +12,7 @@ import {
   QRCodeResponse
 } from '@/types/whatsapp';
 
-const WA_GATEWAY_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:3001/notification';
+const WA_GATEWAY_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'https://whatsapp-service-livid.vercel.app/notification';
 const MAIN_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 class WhatsAppService {
