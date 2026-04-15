@@ -732,7 +732,7 @@ export function WhatsAppDashboard({ className }: WhatsAppDashboardProps) {
   const handleReconnect = async () => {
     try { 
       // Call clear session endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/notify/clear-session`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:3001/api'}/clear-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
