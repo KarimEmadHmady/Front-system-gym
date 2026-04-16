@@ -31,13 +31,11 @@ import { useWhatsAppActions } from '@/hooks/useWhatsApp';
 import { useRef } from 'react';
 import dynamic from 'next/dynamic';
 import ManagerReports from '@/components/manager/ManagerReports';
-import ManagerAttendanceScanner from '@/components/manager/ManagerAttendanceScanner';
 import DashboardSidebar from '@/components/ui/DashboardSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { FeatureGate } from '@/components/ui/FeatureGate';
 import { FeatureBanner } from '@/components/ui/FeatureBanner';
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
-import AttendanceScanner from '@/components/Attendancescanner/Attendancescanner';
 import VideoTutorial from '@/components/VideoTutorial';
 const ManagerAddExpense = dynamic(() => import('@/components/manager/ManagerAddExpense'), { ssr: false });
 const ManagerAddRevenue = dynamic(() => import('@/components/manager/ManagerAddRevenue'), { ssr: false });
@@ -312,13 +310,6 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     </FeatureGate>
   )}
 
-  {/* {activeTab === 'attendance-log' && (
-    <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="manager"  />}>
-      <div className="space-y-8">
-        <ManagerAttendanceScanner params={{ userId: user!.id }} />
-      </div>
-    </FeatureGate>
-  )} */}
 
   {activeTab === 'attendance-log' && (
           <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="admin" />}>

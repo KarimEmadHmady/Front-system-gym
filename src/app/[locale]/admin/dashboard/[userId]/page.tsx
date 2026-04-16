@@ -25,7 +25,6 @@ import AdminProgress from '@/components/admin/AdminProgress';
 import AdminFeedback from '@/components/admin/AdminFeedback';
 import AdminLoyalty from '@/components/admin/AdminLoyalty';
 import AdminWhatsAppNotifications from '@/components/admin/WhatsAppNotifications';
-import AdminMembershipCards from '@/components/admin/AdminMembershipCards';
 import AdminSearch from '@/components/admin/AdminSearch';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
 import { useWhatsAppActions } from '@/hooks/useWhatsApp';
@@ -42,7 +41,6 @@ import VideoTutorial from '@/components/VideoTutorial';
 
 import { FeatureGate } from "@/components/ui/FeatureGate";
 import { FeatureBanner } from "@/components/ui/FeatureBanner";
-import AttendanceScanner from '@/components/Attendancescanner/Attendancescanner';
 
 
 const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => {
@@ -338,21 +336,6 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
             </div>
           </FeatureGate>
         )}
-
-        {/* {activeTab === 'attendance-scanner' && (
-  <FeatureGate
-    feature="attendanceScan"
-    fallback={<FeatureBanner type="locked" role="admin" />}
-  >
-    <div className="space-y-8">
-      <AttendanceScanner
-        userId={user!.id}
-        role="admin"
-        showBackButton={true}
-      />
-    </div>
-  </FeatureGate>
-)} */}
 
         {activeTab === 'payments' && (
           <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" role="admin" />}>
