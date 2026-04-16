@@ -65,6 +65,19 @@ export interface AttendanceResult {
       status: string;
       time: string;
     };
+    recentAttendance: Array<{
+      _id: string;
+      userId: {
+        name: string;
+        email: string;
+        phone: string;
+      };
+      date: string;
+      status: string;
+      notes: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
   };
 }
 
@@ -188,7 +201,11 @@ export const membershipCardService = {
 export const attendanceScanService = {
   // Scan barcode and record attendance
   scanBarcode: async (barcode: string): Promise<AttendanceResult> => {
-    const data = await apiPost<AttendanceResult>('/attendance-scan/scan', { barcode });
+    const data = await apiPost<AttendanceResult>('/attendance-scan/scan', { 
+      barcode,
+      includeRecentAttendance: true,
+      limit: 20
+    });
     return data;
   },
 
@@ -231,6 +248,15 @@ export const attendanceScanService = {
     if (options?.status) params.append('status', options.status);
     
     const data = await apiGet<any>(`/attendance-scan/records?${params.toString()}`);
+    return data;
+  },
+
+  // Get user attendance records by user ID
+  getUserAttendanceRecords: async (userId: string, limit?: number): Promise<any> => {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    
+    const data = await apiGet<any>(`/attendance/${userId}?${params.toString()}`);
     return data;
   }
 };

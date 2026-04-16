@@ -15,6 +15,7 @@ import { queueAttendance } from '@/lib/offlineSync';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import VideoTutorial from '@/components/VideoTutorial';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { UserAttendanceModal } from './UserAttendanceModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,15 @@ interface AttendanceResult {
   data?: {
     user: { id: string; name: string; barcode: string; email: string; membershipLevel: string };
     attendance: { id: string; date: string; status: string; time: string };
+    recentAttendance: Array<{
+      _id: string;
+      userId: { name: string; email: string; phone: string };
+      date: string;
+      status: string;
+      notes: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
   };
 }
 
@@ -185,6 +195,38 @@ function Popup({ popup, onClose }: { popup: PopupState; onClose: () => void }) {
                   hour: '2-digit', minute: '2-digit', second: '2-digit',
                 })}
               </p>
+              
+              {/* Recent Attendance Section */}
+              {popup.data.recentAttendance && popup.data.recentAttendance.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                  <div className="max-h-48 overflow-y-auto space-y-1">
+                    {popup.data.recentAttendance.slice(0, 20).map((record, index) => (
+                      <div key={record._id} className="text-xs bg-gray-50 dark:bg-gray-700/30 rounded p-1.5">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">
+                            {record.userId.name}
+                          </span>
+                          <div className="text-left">
+                            <div className="text-gray-600 dark:text-gray-400 text-xs">
+                              {new Date(record.date).toLocaleDateString('ar-SA', {
+                                weekday: 'short',
+                                day: '2-digit',
+                                month: '2-digit'
+                              })}
+                            </div>
+                            <div className="text-gray-500 dark:text-gray-400 text-xs">
+                              {new Date(record.date).toLocaleTimeString('ar-SA', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -226,6 +268,17 @@ export function AttendanceScanner({
   const [showQRScanner, setShowQRScanner]   = useState(false);
   const [popup, setPopup]                   = useState<PopupState | null>(null);
   const [isOnline, setIsOnline]             = useState(true);
+  const [userAttendanceModal, setUserAttendanceModal] = useState<{
+    isOpen: boolean;
+    userName: string;
+    userId: string;
+    attendanceRecords: any[];
+  }>({
+    isOpen: false,
+    userName: '',
+    userId: '',
+    attendanceRecords: []
+  });
 
   const inputRef        = useRef<HTMLInputElement>(null);
   const lastScannedRef  = useRef('');
@@ -276,7 +329,8 @@ export function AttendanceScanner({
   const showPopup = useCallback((state: PopupState) => {
     if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
     setPopup(state);
-    popupTimerRef.current = setTimeout(() => setPopup(null), 3500);
+    // Increase popup display time to 6 seconds for better visibility
+    popupTimerRef.current = setTimeout(() => setPopup(null), 6000);
   }, []);
 
   const closePopup = useCallback(() => {
@@ -430,6 +484,37 @@ export function AttendanceScanner({
     const base = role === 'admin' ? 'admin' : 'manager';
     router.push(`/${base}/dashboard/${user?.id ?? userId}`);
   };
+
+  // ── User Attendance Modal Handler ───────────────────────────────────────
+  const handleShowUserAttendance = useCallback(async (scan: any) => {
+    if (!scan.userId?._id) return;
+    
+    try {
+      const data = await attendanceScanService.getUserAttendanceRecords(scan.userId._id, 50);
+      setUserAttendanceModal({
+        isOpen: true,
+        userName: scan.userId.name,
+        userId: scan.userId._id,
+        attendanceRecords: data.data?.records || data.data || []
+      });
+    } catch (error) {
+      console.error('Failed to fetch user attendance:', error);
+      showPopup({
+        type: 'error',
+        title: 'خطأ!',
+        message: 'فشل في جلب سجلات الحضور'
+      });
+    }
+  }, [showPopup]);
+
+  const handleCloseUserAttendanceModal = useCallback(() => {
+    setUserAttendanceModal({
+      isOpen: false,
+      userName: '',
+      userId: '',
+      attendanceRecords: []
+    });
+  }, []);
 
   // ── Guard ──────────────────────────────────────────────────────────────────
   if (isLoading) return <LoadingSpinner />;
@@ -659,7 +744,11 @@ export function AttendanceScanner({
               </div>
               <div className="divide-y divide-gray-50 dark:divide-gray-700/50 max-h-72 overflow-y-auto">
                 {validScans.length > 0 ? validScans.map(scan => (
-                  <div key={scan._id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                  <div 
+                    key={scan._id} 
+                    className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer"
+                    onClick={() => handleShowUserAttendance(scan)}
+                  >
                     <div className="flex items-center gap-2.5">
                       <StatusIcon status={scan.status} />
                       <div>
@@ -693,6 +782,14 @@ export function AttendanceScanner({
 
       {/* ── Popup ── */}
       {popup && <Popup popup={popup} onClose={closePopup} />}
+
+      {/* ── User Attendance Modal ── */}
+      <UserAttendanceModal
+        isOpen={userAttendanceModal.isOpen}
+        onClose={handleCloseUserAttendanceModal}
+        userName={userAttendanceModal.userName}
+        attendanceRecords={userAttendanceModal.attendanceRecords}
+      />
     </div>
   );
 }
