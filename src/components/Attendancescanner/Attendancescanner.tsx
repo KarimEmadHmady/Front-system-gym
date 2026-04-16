@@ -255,71 +255,7 @@ export function AttendanceScanner({
     }
     fetchTodaySummary();
     fetchRecentScans();
-  }, [isAuthenticated, user, isLoading]);
-
-  // ── Global keydown — works even when tab is not focused on input ───────────
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-
-        
-      if (popup || showQRScanner || isScanning) return;
-
-      // Ignore if user is typing in another input/textarea
-      const target = e.target as HTMLElement;
-
-       // ✅ لو الـ focus على input الباركود نفسه — سيبه للـ onChange
-        if (target === inputRef.current) return;  // ← السطر ده بس
-
-        if (popup || showQRScanner || isScanning) return;
-
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
-
-
-      if (target !== inputRef.current &&
-          (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
-
-      if (e.key === 'Enter') {
-        const val = barcode.trim();
-        if (val) handleScan(val);
-        return;
-      }
-
-      if (e.key === 'Backspace') {
-        setBarcode(prev => prev.slice(0, -1));
-        inputRef.current?.focus();
-        return;
-      }
-
-      // Printable chars only
-      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        setBarcode(prev => prev + e.key);
-        inputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [barcode, popup, showQRScanner, isScanning]);
-
-
-  // ── Auto-focus after popup / QR close ─────────────────────────────────────
-  useEffect(() => {
-    if (!popup && !showQRScanner && !isScanning) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [popup, showQRScanner, isScanning]);
-
-  // ── Auto-close popup ───────────────────────────────────────────────────────
-  const showPopup = useCallback((state: PopupState) => {
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-    setPopup(state);
-    popupTimerRef.current = setTimeout(() => setPopup(null), 3500);
-  }, []);
-
-  const closePopup = useCallback(() => {
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-    setPopup(null);
-  }, []);
+  }, [isAuthenticated, user, isLoading, role, userId, router]);
 
   // ── Data fetchers ──────────────────────────────────────────────────────────
   const fetchTodaySummary = async () => {
@@ -335,6 +271,18 @@ export function AttendanceScanner({
       setRecentScans(data.data.records);
     } catch {}
   };
+
+  // ── Auto-close popup ───────────────────────────────────────────────────────
+  const showPopup = useCallback((state: PopupState) => {
+    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    setPopup(state);
+    popupTimerRef.current = setTimeout(() => setPopup(null), 3500);
+  }, []);
+
+  const closePopup = useCallback(() => {
+    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    setPopup(null);
+  }, []);
 
   // ── Scan handler ───────────────────────────────────────────────────────────
   const handleScan = useCallback(async (scannedBarcode: string) => {
@@ -388,6 +336,54 @@ export function AttendanceScanner({
       setIsScanning(false);
     }
   }, [isScanning, user?.id, showPopup]);
+
+  // ── Global keydown — works even when tab is not focused on input ───────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+
+      if (popup || showQRScanner || isScanning) return;
+
+      const target = e.target as HTMLElement;
+
+      // ✅ لو الـ focus على input الباركود نفسه — سيبه للـ onChange
+      if (target === inputRef.current) return;
+
+      // Ignore if user is typing in another input/textarea
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      if (e.key === 'Enter') {
+        const val = barcode.trim();
+        if (val) handleScan(val);
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        setBarcode(prev => prev.slice(0, -1));
+        inputRef.current?.focus();
+        return;
+      }
+
+      // Printable chars only
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        setBarcode(prev => prev + e.key);
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [barcode, popup, showQRScanner, isScanning, handleScan]);
+
+  // ── Auto-focus after popup / QR close ─────────────────────────────────────
+  useEffect(() => {
+    if (!popup && !showQRScanner && inputRef.current && !isScanning) {
+      // Longer delay for mobile to prevent immediate refocusing when opening camera
+      const delay = window.innerWidth <= 768 ? 5000 : 100; // 5 seconds for mobile, 100ms for desktop
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, delay);
+    }
+  }, [showQRScanner, popup, isScanning]);
 
   // Add barcode scanner hook after handleScan is defined
   const { hidConnected, connectHID, disconnectHID } = useBarcodeScanner({
