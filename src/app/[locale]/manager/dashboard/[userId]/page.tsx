@@ -37,6 +37,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { FeatureGate } from '@/components/ui/FeatureGate';
 import { FeatureBanner } from '@/components/ui/FeatureBanner';
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
+import AttendanceScanner from '@/components/Attendancescanner/Attendancescanner';
+import VideoTutorial from '@/components/VideoTutorial';
 const ManagerAddExpense = dynamic(() => import('@/components/manager/ManagerAddExpense'), { ssr: false });
 const ManagerAddRevenue = dynamic(() => import('@/components/manager/ManagerAddRevenue'), { ssr: false });
 
@@ -310,13 +312,29 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     </FeatureGate>
   )}
 
-  {activeTab === 'attendance-log' && (
+  {/* {activeTab === 'attendance-log' && (
     <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <ManagerAttendanceScanner params={{ userId: user!.id }} />
       </div>
     </FeatureGate>
-  )}
+  )} */}
+
+  {activeTab === 'attendance-log' && (
+          <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <VideoTutorial videoId="ytPIb5HugAw" title="تسجيل حضور بالباركود أو الكاميرا أو الكود اليدوي" position="bottom-right" buttonText="شرح" />
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-600 mb-4">ماسح الحضور</h2>
+                <p className="text-gray-600 mb-6">استخدم ماسح الباركود لتسجيل حضور الأعضاء</p>
+                 <button onClick={() => router.push(`/attendance-scanner/${user?.id}`)} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
+                  فتح ماسح الحضور
+                </button> 
+
+              </div>
+            </div>
+          </FeatureGate>
+)}
 
   {activeTab === 'payments' && (
     <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" role="manager"  />}>

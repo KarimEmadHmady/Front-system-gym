@@ -42,6 +42,7 @@ import VideoTutorial from '@/components/VideoTutorial';
 
 import { FeatureGate } from "@/components/ui/FeatureGate";
 import { FeatureBanner } from "@/components/ui/FeatureBanner";
+import AttendanceScanner from '@/components/Attendancescanner/Attendancescanner';
 
 
 const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => {
@@ -61,7 +62,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) {
-    router.push('/'); 
+      router.push('/');
       return;
     }
     if (user?.role !== 'admin') {
@@ -81,16 +82,16 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
     if (isAuthenticated && user?.role === 'admin' && !hasTriggeredRef.current) {
       hasTriggeredRef.current = true;
       console.log("🔍 Admin Dashboard: Checking for expiring subscriptions automatically...");
-      
+
       triggerExpiryCheck({ useQueue: true })
         .then((res: any) => {
           console.log("✅ Admin auto-check done:", res);
-          
+
           if (res?.success) {
             if (res.queueStatus) {
               const queued = res.queueStatus.queue || 0;
               const completed = res.queueStatus.completed || 0;
-              
+
               if (completed > 0) {
                 console.log(`📱 Admin: Sent ${completed} expiring notifications automatically`);
               }
@@ -240,8 +241,8 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap mb-4 ${activeTab === tab.id
-                    ? 'border-red-500 text-red-600 dark:text-red-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  ? 'border-red-500 text-red-600 dark:text-red-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
               >
                 <span className="mr-2">{tab.icon}</span>
@@ -259,154 +260,170 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
       {/* Sound Manager */}
       <SoundManager activeTab={activeTab} />
 
-{/* Main Content */}
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  {activeTab === 'overview' && (
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            <AdminStatsCards />
+            <AdminQuickActions />
+            <AdminRecentActivity />
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <FeatureGate feature="users" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <SubscriptionAlertsSummary />
+              <AdminUsersTable />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'trainers' && (
+          <div className="space-y-8">
+            <TrainersDirectory scope="admin" />
+          </div>
+        )}
+
+        {activeTab === 'sessions' && (
+          <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminSessionsOverview />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'plans' && (
+          <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminPlansOverview />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'financial' && (
+          <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminFinancialOverview />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'reports' && (
+          <div className="space-y-8">
+            <AdminReports />
+          </div>
+        )}
+
+        {activeTab === 'attendance' && (
+          <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminAttendance />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'attendance-scanner' && (
+          <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <VideoTutorial videoId="ytPIb5HugAw" title="تسجيل حضور بالباركود أو الكاميرا أو الكود اليدوي" position="bottom-right" buttonText="شرح" />
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-600 mb-4">ماسح الحضور</h2>
+                <p className="text-gray-600 mb-6">استخدم ماسح الباركود لتسجيل حضور الأعضاء</p>
+                 <button onClick={() => router.push(`/attendance-scanner/${user?.id}`)} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
+                  فتح ماسح الحضور
+                </button> 
+
+              </div>
+            </div>
+          </FeatureGate>
+        )}
+
+        {/* {activeTab === 'attendance-scanner' && (
+  <FeatureGate
+    feature="attendanceScan"
+    fallback={<FeatureBanner type="locked" role="admin" />}
+  >
     <div className="space-y-8">
-      <AdminStatsCards />
-      <AdminQuickActions />
-      <AdminRecentActivity />
+      <AttendanceScanner
+        userId={user!.id}
+        role="admin"
+        showBackButton={true}
+      />
     </div>
-  )}
+  </FeatureGate>
+)} */}
 
-  {activeTab === 'users' && (
-    <FeatureGate feature="users" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <SubscriptionAlertsSummary />
-        <AdminUsersTable />
+        {activeTab === 'payments' && (
+          <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminPayments />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'purchases' && (
+          <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminPurchases />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'messages' && (
+          <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminMessages />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'whatsapp' && (
+          <FeatureGate feature="whatsapp" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminWhatsAppNotifications />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'progress' && (
+          <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminProgress />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'feedback' && (
+          <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminFeedback />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'loyalty' && (
+          <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminLoyalty />
+            </div>
+          </FeatureGate>
+        )}
+
+        {activeTab === 'search' && (
+          <div className="space-y-8">
+            <AdminSearch />
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" role="admin" />}>
+            <div className="space-y-8">
+              <AdminSettings />
+            </div>
+          </FeatureGate>
+        )}
       </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'trainers' && (
-    <div className="space-y-8">
-      <TrainersDirectory scope="admin" />
-    </div>
-  )}
-
-  {activeTab === 'sessions' && (
-    <FeatureGate feature="schedules" fallback={<FeatureBanner type="locked"  role="admin"/>}>
-      <div className="space-y-8">
-        <AdminSessionsOverview />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'plans' && (
-    <FeatureGate feature="workoutPlans" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminPlansOverview />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'financial' && (
-    <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminFinancialOverview />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'reports' && (
-    <div className="space-y-8">
-      <AdminReports />
-    </div>
-  )}
-
-  {activeTab === 'attendance' && (
-    <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminAttendance />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'attendance-scanner' && (
-    <FeatureGate feature="attendanceScan" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <VideoTutorial videoId="ytPIb5HugAw" title="تسجيل حضور بالباركود أو الكاميرا أو الكود اليدوي" position="bottom-right" buttonText="شرح" />
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-600 mb-4">ماسح الحضور</h2>
-          <p className="text-gray-600 mb-6">استخدم ماسح الباركود لتسجيل حضور الأعضاء</p>
-          <button onClick={() => router.push(`/admin/attendance-scanner/${user?.id}`)} className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg">
-            فتح ماسح الحضور
-          </button>
-        </div>
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'payments' && (
-    <FeatureGate feature="payments" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminPayments />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'purchases' && (
-    <FeatureGate feature="purchases" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminPurchases />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'messages' && (
-    <FeatureGate feature="messages" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminMessages />
-      </div>
-    </FeatureGate>
-  )}
-
-   {activeTab === 'whatsapp' && (
-    <FeatureGate feature="whatsapp" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminWhatsAppNotifications />
-      </div>
-    </FeatureGate>
-  )} 
-
-  {activeTab === 'progress' && (
-    <FeatureGate feature="clientProgress" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminProgress />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'feedback' && (
-    <FeatureGate feature="feedback" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminFeedback />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'loyalty' && (
-    <FeatureGate feature="loyaltyPoints" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminLoyalty />
-      </div>
-    </FeatureGate>
-  )}
-
-  {activeTab === 'search' && (
-    <div className="space-y-8">
-      <AdminSearch />
-    </div>
-  )}
-
-  {activeTab === 'settings' && (
-    <FeatureGate feature="gymSettings" fallback={<FeatureBanner type="locked" role="admin" />}>
-      <div className="space-y-8">
-        <AdminSettings />
-      </div>
-    </FeatureGate>
-  )}
-</div>
 
       {/* Auto Backup Manager - Global */}
       <AutoBackupManager onOpenSettings={() => setActiveTab('settings')} />
