@@ -19,9 +19,3 @@ export default function Page({ params }: { params: Promise<{ userId: string }> }
     />
   );
 }
-
-
-
-
-
-
