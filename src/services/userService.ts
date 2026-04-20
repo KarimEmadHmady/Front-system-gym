@@ -24,7 +24,24 @@ export class UserService extends BaseService {
 
   // Get user by ID
   async getUser(id: string): Promise<User> {
-    return this.getById<User>(id);
+    // First try the basic getById
+    const basicUser = await this.getById<User>(id);
+    
+    // If basic user doesn't have all fields, try to get from list
+    if (!basicUser.barcode && !basicUser.address) {
+      try {
+        // Get from users list which should have all fields
+        const usersResponse = await this.getAll<User>({ limit: 1000 });
+        const fullUser = usersResponse.data.find(u => u._id === id);
+        if (fullUser) {
+          return fullUser;
+        }
+      } catch (error) {
+        console.warn('Failed to get full user data from list:', error);
+      }
+    }
+    
+    return basicUser;
   }
 
   // Create new user (admin)
@@ -36,7 +53,6 @@ export class UserService extends BaseService {
     return response.json();
   }
 
-  // Update user (supports optional avatar file via FormData)
   // Update user (supports optional avatar file via FormData)
   async updateUser(
     id: string,
@@ -146,5 +162,21 @@ export class UserService extends BaseService {
     const url = `${API_ENDPOINTS.users.myClients}?trainerId=${encodeURIComponent(trainerId)}`;
     const res = await this.apiCall<{ clients: User[] }>(url);
     return res.clients || [];
+  }
+
+  // Search users across all pages
+  async searchUsers(params: {
+    search?: string;
+    role?: string;
+    status?: string;
+  }): Promise<{ data: User[]; total: number }> {
+    const queryParams = new URLSearchParams();
+    
+    if (params.search) queryParams.append('search', params.search);
+    if (params.role) queryParams.append('role', params.role);
+    if (params.status) queryParams.append('status', params.status);
+
+    const url = queryParams.toString() ? `${API_ENDPOINTS.users.search}?${queryParams.toString()}` : API_ENDPOINTS.users.search;
+    return this.apiCall<{ data: User[]; total: number }>(url);
   }
 }

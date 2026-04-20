@@ -10,14 +10,13 @@ import { useTranslations, useLocale } from 'next-intl';
 import ManagerStatsCards from '@/components/manager/ManagerStatsCards';
 import ManagerQuickActions from '@/components/manager/ManagerQuickActions';
 import ManagerRecentActivity from '@/components/manager/ManagerRecentActivity';
-import ManagerUsersTable from '@/components/manager/ManagerUsersTable';
-import AdminPlansOverview from '@/components/admin/AdminPlansOverview';
-import AdminAttendance from '@/components/admin/AdminAttendance';
+import AdminPlansOverview from '@/components/admin/AdminPlansOverview/AdminPlansOverview';
+import AdminAttendanceRefactored from '@/components/admin/attendance/AdminAttendanceRefactored';
 import AdminPayments from '@/components/admin/AdminPayments';
 import AdminPurchases from '@/components/admin/AdminPurchases';
-import AdminMessages from '@/components/admin/AdminMessages';
+import AdminMessages from '@/components/admin/chat/AdminMessages';
 import AdminProgress from '@/components/admin/AdminProgress';
-import AdminLoyalty from '@/components/admin/AdminLoyalty';
+import AdminLoyalty from '@/components/admin/AdminLoyalty/AdminLoyalty';
 import ManagerSettings from '@/components/manager/ManagerSettings';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
 import ManagerFeedback from '@/components/manager/ManagerFeedback';
@@ -25,7 +24,7 @@ import ManagerInvoices from '@/components/manager/ManagerInvoices';
 import AdminSessionsOverview from '@/components/admin/AdminSessionsOverview';
 import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlertIndicator';
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlertBadge';
-import SubscriptionAlertsSummary from '@/components/admin/SubscriptionAlertsSummary';
+import SubscriptionAlertsSummary from '@/components/admin/users/SubscriptionAlertsSummary';
 import SoundManager from '@/components/admin/SoundManager';
 import { useWhatsAppActions } from '@/hooks/useWhatsApp';
 import { useRef } from 'react';
@@ -37,6 +36,7 @@ import { FeatureGate } from '@/components/ui/FeatureGate';
 import { FeatureBanner } from '@/components/ui/FeatureBanner';
 import ThemeToggleButton from '@/components/ui/ThemeToggleButton';
 import VideoTutorial from '@/components/VideoTutorial';
+import AdminUsersTableRefactored from '@/components/admin/users/AdminUsersTableRefactored';
 const ManagerAddExpense = dynamic(() => import('@/components/manager/ManagerAddExpense'), { ssr: false });
 const ManagerAddRevenue = dynamic(() => import('@/components/manager/ManagerAddRevenue'), { ssr: false });
 
@@ -271,7 +271,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     <FeatureGate feature="users" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
         <SubscriptionAlertsSummary />
-        <ManagerUsersTable />
+        <AdminUsersTableRefactored />
       </div>
     </FeatureGate>
   )}
@@ -305,7 +305,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   {activeTab === 'attendance' && (
     <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
-        <AdminAttendance />
+        <AdminAttendanceRefactored />
       </div>
     </FeatureGate>
   )}

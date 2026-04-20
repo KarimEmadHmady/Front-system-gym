@@ -8,22 +8,21 @@ import { useSearchParams } from 'next/navigation';
 
 
 // Components
-import AdminStatsCards from '@/components/admin/AdminStatsCards';
-import AdminQuickActions from '@/components/admin/AdminQuickActions';
-import AdminRecentActivity from '@/components/admin/AdminRecentActivity';
-import AdminUsersTable from '@/components/admin/AdminUsersTable';
+import AdminStatsCards from '@/components/admin/overview/AdminStatsCards';
+import AdminQuickActions from '@/components/admin/overview/AdminQuickActions';
+import AdminRecentActivity from '@/components/admin/overview/AdminRecentActivity';
 import AdminSessionsOverview from '@/components/admin/AdminSessionsOverview';
-import AdminPlansOverview from '@/components/admin/AdminPlansOverview';
+import AdminPlansOverview from '@/components/admin/AdminPlansOverview/AdminPlansOverview';
 import AdminFinancialOverview from '@/components/admin/AdminFinancialOverview';
 import AdminReports from '@/components/admin/AdminReports';
 import AdminSettings from '@/components/admin/AdminSettings';
-import AdminAttendance from '@/components/admin/AdminAttendance';
+import AdminAttendanceRefactored from '@/components/admin/attendance/AdminAttendanceRefactored';
 import AdminPayments from '@/components/admin/AdminPayments';
 import AdminPurchases from '@/components/admin/AdminPurchases';
-import AdminMessages from '@/components/admin/AdminMessages';
+import AdminMessages from '@/components/admin/chat/AdminMessages';
 import AdminProgress from '@/components/admin/AdminProgress';
-import AdminFeedback from '@/components/admin/AdminFeedback';
-import AdminLoyalty from '@/components/admin/AdminLoyalty';
+import AdminFeedback from '@/components/admin/AdminFeedback/AdminFeedback';
+import AdminLoyalty from '@/components/admin/AdminLoyalty/AdminLoyalty';
 import AdminWhatsAppNotifications from '@/components/admin/WhatsAppNotifications';
 import AdminSearch from '@/components/admin/AdminSearch';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
@@ -31,7 +30,7 @@ import { useWhatsAppActions } from '@/hooks/useWhatsApp';
 import { useRef, useCallback } from 'react';
 import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlertIndicator';
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlertBadge';
-import SubscriptionAlertsSummary from '@/components/admin/SubscriptionAlertsSummary';
+import SubscriptionAlertsSummary from '@/components/admin/users/SubscriptionAlertsSummary';
 import SoundManager from '@/components/admin/SoundManager';
 import { AutoBackupManager } from '@/components/admin/AutoBackupManager';
 import DashboardSidebar from '@/components/ui/DashboardSidebar';
@@ -41,6 +40,7 @@ import VideoTutorial from '@/components/VideoTutorial';
 
 import { FeatureGate } from "@/components/ui/FeatureGate";
 import { FeatureBanner } from "@/components/ui/FeatureBanner";
+import AdminUsersTableRefactored from '@/components/admin/users/AdminUsersTableRefactored';
 
 
 const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => {
@@ -272,7 +272,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
           <FeatureGate feature="users" fallback={<FeatureBanner type="locked" role="admin" />}>
             <div className="space-y-8">
               <SubscriptionAlertsSummary />
-              <AdminUsersTable />
+              <AdminUsersTableRefactored />
             </div>
           </FeatureGate>
         )}
@@ -316,7 +316,7 @@ const AdminDashboard = ({ params }: { params: Promise<{ userId: string }> }) => 
         {activeTab === 'attendance' && (
           <FeatureGate feature="attendance" fallback={<FeatureBanner type="locked" role="admin" />}>
             <div className="space-y-8">
-              <AdminAttendance />
+              <AdminAttendanceRefactored />
             </div>
           </FeatureGate>
         )}

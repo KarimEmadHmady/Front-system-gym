@@ -352,7 +352,8 @@ export const API_ENDPOINTS = {
     get: (id: string) => `/users/${id}`,
     role: '/role',
     deleteHard: (id: string) => `/${id}/hard`,
-    myClients: '/my-clients'
+    myClients: '/my-clients',
+    search: '/search'
   },
   // Attendance
   attendance: {

@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import ReduxProvider from '@/redux/ReduxProvider';
 import InstallPWAButton from '@/components/InstallPWAButton';
-import { gymName } from '@/lib/gym-name';
 import { GymBrandingProvider, GymBrandingHeadSync } from '@/contexts/GymBrandingContext';
 import { fallbackLogo192, fallbackLogo512 } from '@/lib/gym-branding';
 import { FeaturesProvider } from "@/contexts/FeaturesContext";

@@ -103,7 +103,25 @@ export function useUsers() {
     }
   }, [service]);
 
-  return { list, get, create, update, remove, hardRemove, updateRole, isLoading, error };
+  const search = useCallback(async (params: {
+    search?: string;
+    role?: string;
+    status?: string;
+  }) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await service.searchUsers(params);
+      return result;
+    } catch (e) {
+      setError('Failed to search users');
+      return { data: [], total: 0 };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [service]);
+
+  return { list, get, create, update, remove, hardRemove, updateRole, search, isLoading, error };
 }
 
 

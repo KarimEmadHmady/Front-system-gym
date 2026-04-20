@@ -6,7 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Link from "next/link";
-import { useGymBranding } from '@/contexts/GymBrandingContext';
+import { GymSettingsService } from '@/services/gymSettingsService';
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -15,14 +15,33 @@ const LoginPage: React.FC = () => {
   });
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [gymSettings, setGymSettings] = useState<any>(null);
+  const [logoSrc, setLogoSrc] = useState<string>(''); // No default logo
   
   const { login, isLoading, error, isAuthenticated, user, clearError } = useAuth();
   const router = useRouter();
   const t = useTranslations('Login');
   const locale = useLocale();
 
-  const contactPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '+201113081409';
-  const { logoUrl: logoSrc } = useGymBranding();
+  const contactPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '';
+
+  useEffect(() => {
+    const fetchGymSettings = async () => {
+      try {
+        const gymSettingsService = new GymSettingsService();
+        const settings = await gymSettingsService.get();
+        setGymSettings(settings);
+        // Set logo from gym settings
+        if (settings?.logoUrl) {
+          setLogoSrc(settings.logoUrl);
+        }
+      } catch (error) {
+        console.error('Failed to fetch gym settings:', error);
+        // Keep default logo on error
+      }
+    };
+    fetchGymSettings();
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user && !isLoading) {
@@ -121,9 +140,11 @@ const LoginPage: React.FC = () => {
             className="bg-white/60 backdrop-blur-md shadow-xl rounded-2xl px-6 py-8 w-full max-w-sm flex flex-col gap-4 mx-5 mt-[10vh] relative z-[999999]"
           >
             {/* Logo */}
-            <div className="flex justify-center mb-4">
-              <img src={logoSrc} alt="GYM Logo" className="w-25 h-25 object-contain rounded-full shadow-lg bg-white/80 p-2" />
-            </div>
+            {logoSrc && (
+              <div className="flex justify-center mb-4">
+                <img src={logoSrc} alt="GYM Logo" className="w-25 h-25 object-contain rounded-full shadow-lg bg-white/80 p-2" />
+              </div>
+            )}
             <h2 className="text-2xl font-bold text-center text-gray-700 mb-2">تسجيل الدخول</h2>
             {/* Error Message */}
             {localError && (

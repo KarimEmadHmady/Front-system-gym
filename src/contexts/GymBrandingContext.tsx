@@ -9,16 +9,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAppSelector } from "@/redux/hooks";
 import {
   GymSettingsService,
   type GymSettings,
 } from "@/services/gymSettingsService";
 import {
-  fallbackGymName,
   fallbackLogo192,
   fallbackLogo512,
-  fallbackLogoUrl,
 } from "@/lib/gym-branding";
 
 export type GymBrandingValue = {
@@ -32,8 +29,8 @@ export type GymBrandingValue = {
 
 const defaultBranding: GymBrandingValue = {
   settings: null,
-  gymName: fallbackGymName,
-  logoUrl: fallbackLogoUrl,
+  gymName: '',
+  logoUrl: '',
   logo192Url: fallbackLogo192,
   logo512Url: fallbackLogo512,
   refresh: async () => {},
@@ -42,14 +39,9 @@ const defaultBranding: GymBrandingValue = {
 const GymBrandingContext = createContext<GymBrandingValue>(defaultBranding);
 
 export function GymBrandingProvider({ children }: { children: ReactNode }) {
-  const token = useAppSelector((s) => s.auth.token);
   const [settings, setSettings] = useState<GymSettings | null>(null);
 
   const load = useCallback(async () => {
-    if (!token) {
-      setSettings(null);
-      return;
-    }
     try {
       const svc = new GymSettingsService();
       const data = await svc.get();
@@ -57,29 +49,26 @@ export function GymBrandingProvider({ children }: { children: ReactNode }) {
     } catch {
       setSettings(null);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!token) {
-      setSettings(null);
-      return;
-    }
     void load();
-  }, [token, load]);
+  }, [load]);
 
   const value = useMemo((): GymBrandingValue => {
-    const apiName = settings?.gymName?.trim();
-    const apiLogo = settings?.logoUrl?.trim();
-    const gymName = apiName || fallbackGymName;
-    const logoUrl = apiLogo || fallbackLogoUrl;
-    const logo192Url = apiLogo || fallbackLogo192;
-    const logo512Url = apiLogo || fallbackLogo512;
+    const apiName = settings?.gymName?.trim() || '';
+    const apiLogo = settings?.logoUrl?.trim() || '';
+    
+    // Create resized versions of the API logo
+    const logo192Url = apiLogo ? `${apiLogo}?w=192&h=192&fit=crop` : '';
+    const logo512Url = apiLogo ? `${apiLogo}?w=512&h=512&fit=crop` : '';
+    
     return {
       settings,
-      gymName,
-      logoUrl,
-      logo192Url,
-      logo512Url,
+      gymName: apiName,
+      logoUrl: apiLogo,
+      logo192Url: logo192Url || fallbackLogo192,
+      logo512Url: logo512Url || fallbackLogo512,
       refresh: load,
     };
   }, [settings, load]);

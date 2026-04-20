@@ -11,10 +11,12 @@ import { UserService } from "@/services/userService";
 import VideoTutorial from "../VideoTutorial";
 // import { useGymBranding } from "@/contexts/GymBrandingContext";
 import { BackupManager } from "./BackupManager";
+import CustomAlert from "../ui/CustomAlert";
 
 // FileInput component for image uploads
 const FileInput = ({
   onChange,
+  onRemove,
   accept = "image/*",
   className = "",
   label = "",
@@ -22,6 +24,7 @@ const FileInput = ({
   currentUrl,
 }: {
   onChange: (file: File | null) => void;
+  onRemove?: () => void;
   accept?: string;
   className?: string;
   label?: string;
@@ -57,7 +60,7 @@ const FileInput = ({
           </div>
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={onRemove || (() => onChange(null))}
             className="text-red-500 hover:text-red-700 text-sm font-medium"
           >
             إزالة
@@ -78,6 +81,17 @@ const AdminSettings = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [currentPassword, setCurrentPassword] = useState(""); // To verify old password
+  const [alert, setAlert] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'success'
+  });
   const svc = new GymSettingsService();
 
   useEffect(() => {
@@ -215,11 +229,12 @@ if (currentPassword || newPassword || confirmNewPassword) {
 
       // void refreshBranding();
 
-      window.dispatchEvent(
-        new CustomEvent("toast", {
-          detail: { type: "success", message: "تم حفظ الإعدادات" },
-        })
-      );
+      setAlert({
+        isOpen: true,
+        title: 'تم الحفظ بنجاح',
+        message: 'تم حفظ الإعدادات',
+        type: 'success'
+      });
     } catch (e: any) {
       setError(e?.message || "تعذر حفظ الإعدادات");
     } finally {
@@ -240,6 +255,11 @@ if (currentPassword || newPassword || confirmNewPassword) {
     setConfirmNewPassword("");
   };
   
+
+  const handleRemoveLogo = () => {
+    setUploadedLogo(undefined);
+    setSettings((prev) => ({ ...(prev || {}), logoUrl: '' }));
+  };
 
   return (
     <div className="space-y-8">
@@ -283,6 +303,7 @@ if (currentPassword || newPassword || confirmNewPassword) {
                   currentFile={uploadedLogo}
                   currentUrl={settings?.logoUrl}
                   onChange={(file) => setUploadedLogo(file ?? undefined)}
+                  onRemove={handleRemoveLogo}
                 />
               </div>
               <div className="md:col-span-2">
@@ -468,6 +489,16 @@ if (currentPassword || newPassword || confirmNewPassword) {
           <BackupManager />
         </div>
       </div>
+
+      {/* Custom Alert */}
+      <CustomAlert
+        isOpen={alert.isOpen}
+        onClose={() => setAlert(prev => ({ ...prev, isOpen: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        duration={5000}
+      />
     </div>
   );
 };
