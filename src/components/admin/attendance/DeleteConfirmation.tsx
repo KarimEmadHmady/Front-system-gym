@@ -27,10 +27,10 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
           </div>
           <div className="flex-1">
             <div className="text-base font-semibold text-gray-900 dark:text-white">
-              Confirm Delete
+              تأكيد الحذف
             </div>
             <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              Are you sure you want to delete this record? This action cannot be undone.
+              هل أنت متأكد من حذف هذا السجل؟ لا يمكن التراجع عن هذا الإجراء.
             </div>
           </div>
           <button 
@@ -46,14 +46,14 @@ export const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
             className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-700"
             disabled={loading}
           >
-            Cancel
+            إلغاء
           </button>
           <button 
             onClick={onConfirm} 
             disabled={loading}
             className="px-4 py-2 rounded text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400"
           >
-            {loading ? 'Deleting...' : 'Confirm Delete'}
+            {loading ? 'جاري الحذف...' : 'تأكيد الحذف'}
           </button>
         </div>
       </div>

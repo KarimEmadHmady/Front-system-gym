@@ -152,6 +152,20 @@ const AdminExpenses: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    loadList();
+  }, [category, minAmount, maxAmount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-filter when dates change
+  useEffect(() => {
+    loadList();
+  }, [from, to]); // eslint-disable-line react-hooks-exhaustive-deps
+
+  // Auto-filter when sort or pagination changes
+  useEffect(() => {
+    loadList();
+  }, [sort, limit, skip]); // eslint-disable-line react-hooks-exhaustive-deps
+
   const resetForm = () => {
     setForm({ amount: undefined, date: undefined, category: '', paidTo: '', notes: '', imageUrl: '' });
     setSelectedId(null);

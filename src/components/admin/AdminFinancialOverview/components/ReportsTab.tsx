@@ -19,7 +19,69 @@ const normalizeInvoicesList = (raw: any): { count: number; results: any[] } => {
   return { count: 0, results: [] };
 };
 
-const fmt = (n: number) => `ج.م${new Intl.NumberFormat().format(n)}`;
+const fmt = (n: number) =>
+  `ج.م ${new Intl.NumberFormat('ar-EG').format(n)}`;
+
+// ─── Status Badge ──────────────────────────────────────────────────────────
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const map: Record<string, { label: string; cls: string }> = {
+    paid:    { label: 'مدفوعة', cls: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+    pending: { label: 'معلقة',  cls: 'bg-amber-100 text-amber-700 border border-amber-200' },
+    overdue: { label: 'متأخرة', cls: 'bg-red-100 text-red-700 border border-red-200' },
+  };
+  const s = map[status] ?? { label: status, cls: 'bg-gray-100 text-gray-600 border border-gray-200' };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}`}>
+      {s.label}
+    </span>
+  );
+};
+
+// ─── Stat Card ─────────────────────────────────────────────────────────────
+
+const StatCard = ({
+  label, value, accent = 'gray',
+}: { label: string; value: string | number; accent?: 'gray' | 'green' | 'red' | 'amber' | 'blue' }) => {
+  const accents: Record<string, string> = {
+    gray:  'border-t-4 border-gray-400 bg-white',
+    green: 'border-t-4 border-emerald-500 bg-white',
+    red:   'border-t-4 border-red-500 bg-white',
+    amber: 'border-t-4 border-amber-500 bg-white',
+    blue:  'border-t-4 border-blue-500 bg-white',
+  };
+  const textColors: Record<string, string> = {
+    gray:  'text-gray-700',
+    green: 'text-emerald-700',
+    red:   'text-red-700',
+    amber: 'text-amber-700',
+    blue:  'text-blue-700',
+  };
+  return (
+    <div className={`p-5 rounded-xl shadow-sm ${accents[accent]}`}>
+      <div className={`text-2xl font-bold tabular-nums ${textColors[accent]}`}>{value}</div>
+      <div className="text-sm text-gray-500 mt-1 font-medium">{label}</div>
+    </div>
+  );
+};
+
+// ─── Section Box ───────────────────────────────────────────────────────────
+
+const SectionBox = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
+      <h5 className="font-semibold text-gray-700 text-sm">{title}</h5>
+    </div>
+    <div className="p-5 space-y-2">{children}</div>
+  </div>
+);
+
+const Row = ({ label, value, colorCls = 'text-gray-800' }: { label: string; value: string | number; colorCls?: string }) => (
+  <div className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+    <span className="text-gray-500 text-sm">{label}</span>
+    <span className={`font-semibold text-sm tabular-nums ${colorCls}`}>{value}</span>
+  </div>
+);
 
 // ─── sub-views ─────────────────────────────────────────────────────────────
 
@@ -27,88 +89,89 @@ const InvoicesReport = ({
   data, userMap, page, pageSize, totalPages,
   onPageChange, onPageSizeChange,
 }: any) => (
-  <div className="space-y-4">
-    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">🧾 تقرير الفواتير</h4>
+  <div className="space-y-5">
+    <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+      🧾 <span>تقرير الفواتير</span>
+    </h4>
 
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {[
-        { label: 'إجمالي', value: data.total, bg: 'bg-gray-50', color: 'text-gray-600' },
-        { label: 'مدفوعة', value: data.paid, bg: 'bg-green-50', color: 'text-green-600' },
-        { label: 'معلقة', value: data.pending, bg: 'bg-gray-50', color: 'text-gray-600' },
-        { label: 'متأخرة', value: data.overdue, bg: 'bg-red-50', color: 'text-red-600' },
-      ].map((s) => (
-        <div key={s.label} className={`p-4 ${s.bg} rounded-lg`}>
-          <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-          <div className="text-sm text-gray-600">{s.label}</div>
-        </div>
-      ))}
+      <StatCard label="إجمالي الفواتير" value={data.total} accent="gray" />
+      <StatCard label="مدفوعة" value={data.paid} accent="green" />
+      <StatCard label="معلقة" value={data.pending} accent="amber" />
+      <StatCard label="متأخرة" value={data.overdue} accent="red" />
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-500">المبالغ المالية</h5>
-        {[
-          { label: 'إجمالي', val: data.totalAmount, color: '' },
-          { label: 'المدفوع', val: data.paidAmount, color: 'text-green-600' },
-          { label: 'المعلق', val: data.pendingAmount, color: 'text-gray-600' },
-          { label: 'المتأخر', val: data.overdueAmount, color: 'text-red-600' },
-        ].map((r) => (
-          <div key={r.label} className={`flex justify-between ${r.color}`}>
-            <span className="text-gray-600">{r.label}:</span>
-            <span className="font-medium">{fmt(r.val)}</span>
-          </div>
-        ))}
-      </div>
+      <SectionBox title="المبالغ المالية">
+        <Row label="إجمالي" value={fmt(data.totalAmount)} />
+        <Row label="المدفوع" value={fmt(data.paidAmount)} colorCls="text-emerald-700" />
+        <Row label="المعلق" value={fmt(data.pendingAmount)} colorCls="text-amber-700" />
+        <Row label="المتأخر" value={fmt(data.overdueAmount)} colorCls="text-red-700" />
+      </SectionBox>
 
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-500">نسب التحصيل</h5>
+      <SectionBox title="نسب التحصيل">
         {[
-          { label: 'نسبة التحصيل', val: data.paidAmount },
-          { label: 'نسبة المعلق', val: data.pendingAmount },
-          { label: 'نسبة المتأخر', val: data.overdueAmount },
+          { label: 'نسبة التحصيل', val: data.paidAmount, cls: 'text-emerald-700' },
+          { label: 'نسبة المعلق',  val: data.pendingAmount, cls: 'text-amber-700' },
+          { label: 'نسبة المتأخر', val: data.overdueAmount, cls: 'text-red-700' },
         ].map((r) => (
-          <div key={r.label} className="flex justify-between">
-            <span className="text-gray-600">{r.label}:</span>
-            <span className="font-medium">
-              {data.totalAmount > 0 ? ((r.val / data.totalAmount) * 100).toFixed(1) : 0}%
-            </span>
-          </div>
+          <Row
+            key={r.label}
+            label={r.label}
+            value={`${data.totalAmount > 0 ? ((r.val / data.totalAmount) * 100).toFixed(1) : 0}%`}
+            colorCls={r.cls}
+          />
         ))}
-      </div>
+      </SectionBox>
     </div>
 
-    {/* قائمة الفواتير مع pagination */}
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="bg-gray-50 px-4 py-2 border-b flex items-center justify-between flex-wrap gap-3">
-        <h5 className="font-medium text-gray-900">الفواتير</h5>
+    {/* قائمة الفواتير */}
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+        <h5 className="font-semibold text-gray-700 text-sm">قائمة الفواتير</h5>
         <div className="flex items-center gap-2 text-sm">
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="border border-gray-200 rounded px-2 py-1 bg-white"
+            className="border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
             {[10, 20, 50].map((n) => <option key={n} value={n}>{n} / صفحة</option>)}
           </select>
-          <span className="text-gray-600">صفحة {page} من {totalPages}</span>
-          <button onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1} className="px-2 py-1 border rounded disabled:opacity-50">السابق</button>
-          <button onClick={() => onPageChange(Math.min(totalPages, page + 1))} disabled={page >= totalPages} className="px-2 py-1 border rounded disabled:opacity-50">التالي</button>
+          <span className="text-gray-500">صفحة {page} من {totalPages}</span>
+          <button
+            onClick={() => onPageChange(Math.max(1, page - 1))}
+            disabled={page <= 1}
+            className="px-3 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            السابق
+          </button>
+          <button
+            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+            disabled={page >= totalPages}
+            className="px-3 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            التالي
+          </button>
         </div>
       </div>
-      <div className="max-h-64 overflow-y-auto">
+      <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
         {(data.data || []).map((invoice: any, i: number) => (
-          <div key={invoice._id || i} className="flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0">
+          <div
+            key={invoice._id || i}
+            className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+          >
             <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${invoice.status === 'paid' ? 'bg-green-500' : invoice.status === 'pending' ? 'bg-gray-500' : 'bg-red-500'}`} />
+              <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${invoice.status === 'paid' ? 'bg-emerald-500' : invoice.status === 'pending' ? 'bg-amber-400' : 'bg-red-500'}`} />
               <div>
-                <div className="font-medium">فاتورة #{invoice.invoiceNumber || invoice._id}</div>
-                <div className="text-sm text-gray-500">{userMap[invoice.userId]?.name || invoice.userId} • {new Date(invoice.createdAt).toLocaleDateString()}</div>
+                <div className="font-semibold text-gray-800 text-sm">فاتورة #{invoice.invoiceNumber || invoice._id}</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {userMap[invoice.userId]?.name || invoice.userId} • {new Date(invoice.createdAt).toLocaleDateString('ar-EG')}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-medium">{fmt(invoice.amount || 0)}</div>
-              <div className={`text-sm ${invoice.status === 'paid' ? 'text-green-600' : invoice.status === 'pending' ? 'text-gray-600' : 'text-red-600'}`}>
-                {invoice.status === 'paid' ? 'مدفوعة' : invoice.status === 'pending' ? 'معلقة' : 'متأخرة'}
-              </div>
+            <div className="flex items-center gap-3">
+              <div className="font-semibold text-gray-800 text-sm tabular-nums">{fmt(invoice.amount || 0)}</div>
+              <StatusBadge status={invoice.status} />
             </div>
           </div>
         ))}
@@ -118,42 +181,44 @@ const InvoicesReport = ({
 );
 
 const PayrollsReport = ({ data, userMap }: any) => (
-  <div className="space-y-4">
-    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">🧑‍💼 تقرير الرواتب</h4>
+  <div className="space-y-5">
+    <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+      🧑‍💼 <span>تقرير الرواتب</span>
+    </h4>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {[
-        { label: 'إجمالي الرواتب (عدد)', value: data.total, bg: 'bg-gray-50', color: 'text-gray-600' },
-        { label: 'إجمالي المبلغ', value: fmt(data.totalAmount), bg: 'bg-green-50', color: 'text-green-600' },
-        { label: 'إجمالي المكافآت', value: fmt(data.totalBonuses), bg: 'bg-gray-50', color: 'text-gray-600' },
-        { label: 'إجمالي الخصومات', value: fmt(data.totalDeductions), bg: 'bg-red-50', color: 'text-red-600' },
-      ].map((s) => (
-        <div key={s.label} className={`p-4 ${s.bg} rounded-lg`}>
-          <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-          <div className="text-sm text-gray-600">{s.label}</div>
-        </div>
-      ))}
+      <StatCard label="إجمالي السجلات" value={data.total} accent="gray" />
+      <StatCard label="إجمالي المبلغ" value={fmt(data.totalAmount)} accent="green" />
+      <StatCard label="إجمالي المكافآت" value={fmt(data.totalBonuses)} accent="blue" />
+      <StatCard label="إجمالي الخصومات" value={fmt(data.totalDeductions)} accent="red" />
     </div>
+
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-500">تفاصيل الرواتب</h5>
-        <div className="flex justify-between"><span className="text-gray-600">صافي الرواتب:</span><span className="font-medium text-green-600">{fmt(data.netAmount)}</span></div>
-        <div className="flex justify-between"><span className="text-gray-600">متوسط الراتب:</span><span className="font-medium">{fmt(data.total > 0 ? Math.round(data.totalAmount / data.total) : 0)}</span></div>
-        <div className="flex justify-between"><span className="text-gray-600">نسبة المكافآت:</span><span className="font-medium">{data.totalAmount > 0 ? ((data.totalBonuses / data.totalAmount) * 100).toFixed(1) : 0}%</span></div>
-        <div className="flex justify-between"><span className="text-gray-600">نسبة الخصومات:</span><span className="font-medium">{data.totalAmount > 0 ? ((data.totalDeductions / data.totalAmount) * 100).toFixed(1) : 0}%</span></div>
-      </div>
-      <div className="p-4 border border-gray-200 rounded-lg">
-        <h5 className="font-medium text-gray-500 mb-2">آخر الرواتب</h5>
-        <div className="space-y-2 max-h-48 overflow-y-auto">
+      <SectionBox title="تفاصيل الرواتب">
+        <Row label="صافي الرواتب" value={fmt(data.netAmount)} colorCls="text-emerald-700" />
+        <Row label="متوسط الراتب" value={fmt(data.total > 0 ? Math.round(data.totalAmount / data.total) : 0)} />
+        <Row label="نسبة المكافآت" value={`${data.totalAmount > 0 ? ((data.totalBonuses / data.totalAmount) * 100).toFixed(1) : 0}%`} colorCls="text-blue-700" />
+        <Row label="نسبة الخصومات" value={`${data.totalAmount > 0 ? ((data.totalDeductions / data.totalAmount) * 100).toFixed(1) : 0}%`} colorCls="text-red-700" />
+      </SectionBox>
+
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
+          <h5 className="font-semibold text-gray-700 text-sm">آخر الرواتب</h5>
+        </div>
+        <div className="max-h-52 overflow-y-auto divide-y divide-gray-100">
           {data.data.slice(0, 5).map((p: any, i: number) => (
-            <div key={p._id || i} className="flex justify-between items-center p-2 rounded">
+            <div key={p._id || i} className="flex justify-between items-center px-5 py-3 hover:bg-gray-50 transition-colors">
               <div>
-                <div className="font-medium text-sm text-gray-400">راتب - {userMap[p.employeeId]?.name || p.employeeId || 'موظف'}</div>
-                <div className="text-xs text-gray-500">{new Date(p.paymentDate).toLocaleDateString()}</div>
+                <div className="font-semibold text-sm text-gray-800">
+                  {userMap[p.employeeId]?.name || p.employeeId || 'موظف'}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">{new Date(p.paymentDate).toLocaleDateString('ar-EG')}</div>
               </div>
               <div className="text-right">
-                <div className="font-medium text-sm">{fmt(p.salaryAmount || 0)}</div>
-                {p.bonuses > 0 && <div className="text-xs text-green-600">+{p.bonuses} مكافأة</div>}
-                {p.deductions > 0 && <div className="text-xs text-red-600">-{p.deductions} خصم</div>}
+                <div className="font-semibold text-sm text-gray-800 tabular-nums">{fmt(p.salaryAmount || 0)}</div>
+                <div className="flex gap-2 justify-end mt-0.5">
+                  {p.bonuses > 0 && <span className="text-xs text-emerald-600 font-medium">+{fmt(p.bonuses)}</span>}
+                  {p.deductions > 0 && <span className="text-xs text-red-600 font-medium">-{fmt(p.deductions)}</span>}
+                </div>
               </div>
             </div>
           ))}
@@ -164,42 +229,46 @@ const PayrollsReport = ({ data, userMap }: any) => (
 );
 
 const RevenuesReport = ({ data }: any) => (
-  <div className="space-y-4">
-    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">💹 تقرير الإيرادات</h4>
+  <div className="space-y-5">
+    <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+      💹 <span>تقرير الإيرادات</span>
+    </h4>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-4 bg-gray-50 rounded-lg"><div className="text-2xl font-bold text-gray-600">{data.total}</div><div className="text-sm text-gray-600">إجمالي المعاملات</div></div>
-      <div className="p-4 bg-green-50 rounded-lg"><div className="text-2xl font-bold text-green-600">{fmt(data.totalAmount)}</div><div className="text-sm text-gray-600">إجمالي الإيرادات</div></div>
-      <div className="p-4 bg-gray-50 rounded-lg"><div className="text-2xl font-bold text-gray-600">{fmt(data.total > 0 ? Math.round(data.totalAmount / data.total) : 0)}</div><div className="text-sm text-gray-600">متوسط المعاملة</div></div>
+      <StatCard label="إجمالي المعاملات" value={data.total} accent="gray" />
+      <StatCard label="إجمالي الإيرادات" value={fmt(data.totalAmount)} accent="green" />
+      <StatCard label="متوسط المعاملة" value={fmt(data.total > 0 ? Math.round(data.totalAmount / data.total) : 0)} accent="blue" />
     </div>
+
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-400">حسب المصدر</h5>
+      <SectionBox title="حسب المصدر">
         {Object.entries(data.bySource).map(([src, amt]: [string, any]) => (
-          <div key={src} className="flex justify-between"><span className="text-gray-600 capitalize">{src}:</span><span className="font-medium">{fmt(amt)}</span></div>
+          <Row key={src} label={src} value={fmt(amt)} colorCls="text-emerald-700" />
         ))}
-      </div>
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-400">حسب طريقة الدفع</h5>
+      </SectionBox>
+      <SectionBox title="حسب طريقة الدفع">
         {Object.entries(data.byPaymentMethod).map(([method, amt]: [string, any]) => (
-          <div key={method} className="flex justify-between"><span className="text-gray-600 capitalize">{method}:</span><span className="font-medium">{fmt(amt)}</span></div>
+          <Row key={method} label={method} value={fmt(amt)} colorCls="text-emerald-700" />
         ))}
-      </div>
+      </SectionBox>
     </div>
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="bg-gray-50 px-4 py-2 border-b"><h5 className="font-medium text-gray-900">آخر الإيرادات</h5></div>
-      <div className="max-h-64 overflow-y-auto">
+
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+        <h5 className="font-semibold text-gray-700 text-sm">آخر الإيرادات</h5>
+      </div>
+      <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
         {data.data.slice(0, 10).map((r: any, i: number) => (
-          <div key={r._id || i} className="flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0">
+          <div key={r._id || i} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-emerald-500" />
               <div>
-                <div className="font-medium">{r.notes || 'إيراد'}</div>
-                <div className="text-sm text-gray-500">{r.sourceType} • {new Date(r.date).toLocaleDateString()}</div>
+                <div className="font-semibold text-gray-800 text-sm">{r.notes || 'إيراد'}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{r.sourceType} • {new Date(r.date).toLocaleDateString('ar-EG')}</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="font-medium text-green-600">{fmt(r.amount || 0)}</div>
-              <div className="text-sm text-gray-500">{r.paymentMethod}</div>
+              <div className="font-semibold text-emerald-700 text-sm tabular-nums">{fmt(r.amount || 0)}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{r.paymentMethod}</div>
             </div>
           </div>
         ))}
@@ -209,39 +278,49 @@ const RevenuesReport = ({ data }: any) => (
 );
 
 const ExpensesReport = ({ data }: any) => (
-  <div className="space-y-4">
-    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">💸 تقرير المصروفات</h4>
+  <div className="space-y-5">
+    <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+      💸 <span>تقرير المصروفات</span>
+    </h4>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-4 bg-gray-50 rounded-lg"><div className="text-2xl font-bold text-gray-600">{data.total}</div><div className="text-sm text-gray-600">إجمالي المصروفات</div></div>
-      <div className="p-4 bg-red-50 rounded-lg"><div className="text-2xl font-bold text-red-600">{fmt(data.totalAmount)}</div><div className="text-sm text-gray-600">إجمالي المبلغ</div></div>
-      <div className="p-4 bg-orange-50 rounded-lg"><div className="text-2xl font-bold text-orange-600">{fmt(data.total > 0 ? Math.round(data.totalAmount / data.total) : 0)}</div><div className="text-sm text-gray-600">متوسط المصروف</div></div>
+      <StatCard label="عدد المصروفات" value={data.total} accent="gray" />
+      <StatCard label="إجمالي المبلغ" value={fmt(data.totalAmount)} accent="red" />
+      <StatCard label="متوسط المصروف" value={fmt(data.total > 0 ? Math.round(data.totalAmount / data.total) : 0)} accent="amber" />
     </div>
-    <div className="p-4 border border-gray-200 rounded-lg">
-      <h5 className="font-medium text-gray-400 mb-2">توزيع حسب الفئة</h5>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(data.byCategory).map(([cat, amt]: [string, any]) => (
-          <div key={cat} className="flex justify-between items-center p-3 bg-gray-300 rounded">
-            <span className="capitalize">{cat}:</span>
-            <span className="font-medium text-red-600">{fmt(amt)}</span>
-          </div>
-        ))}
+
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
+        <h5 className="font-semibold text-gray-700 text-sm">توزيع حسب الفئة</h5>
+      </div>
+      <div className="p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {Object.entries(data.byCategory).map(([cat, amt]: [string, any]) => (
+            <div key={cat} className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-100">
+              <span className="text-gray-700 text-sm font-medium capitalize">{cat}</span>
+              <span className="font-bold text-red-700 text-sm tabular-nums">{fmt(amt)}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="bg-gray-50 px-4 py-2 border-b"><h5 className="font-medium text-gray-900">آخر المصروفات</h5></div>
-      <div className="max-h-64 overflow-y-auto">
+
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="bg-gray-50 px-5 py-3 border-b border-gray-200">
+        <h5 className="font-semibold text-gray-700 text-sm">آخر المصروفات</h5>
+      </div>
+      <div className="max-h-72 overflow-y-auto divide-y divide-gray-100">
         {data.data.slice(0, 10).map((e: any, i: number) => (
-          <div key={e._id || i} className="flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0">
+          <div key={e._id || i} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-red-500" />
               <div>
-                <div className="font-medium">{e.description || 'مصروف'}</div>
-                <div className="text-sm text-gray-500">{e.category} • {new Date(e.date).toLocaleDateString()}</div>
+                <div className="font-semibold text-gray-800 text-sm">{e.description || 'مصروف'}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{e.category} • {new Date(e.date).toLocaleDateString('ar-EG')}</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="font-medium text-red-600">{fmt(e.amount || 0)}</div>
-              <div className="text-sm text-gray-500">{e.category}</div>
+              <div className="font-semibold text-red-700 text-sm tabular-nums">{fmt(e.amount || 0)}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{e.category}</div>
             </div>
           </div>
         ))}
@@ -251,42 +330,60 @@ const ExpensesReport = ({ data }: any) => (
 );
 
 const SummaryReport = ({ data }: any) => (
-  <div className="space-y-4">
-    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">📊 التقرير المالي الشامل</h4>
+  <div className="space-y-5">
+    <h4 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+      📊 <span>التقرير المالي الشامل</span>
+    </h4>
+
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-6 bg-green-50 rounded-lg border border-green-200"><div className="text-3xl font-bold text-green-600">{fmt(data.totalRevenue)}</div><div className="text-sm text-gray-600 mt-1">إجمالي الإيرادات</div></div>
-      <div className="p-6 bg-red-50 rounded-lg border border-red-200"><div className="text-3xl font-bold text-red-600">{fmt(data.totalExpenses)}</div><div className="text-sm text-gray-600 mt-1">إجمالي المصروفات</div></div>
-      <div className={`p-6 rounded-lg border ${data.netProfit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-        <div className={`text-3xl font-bold ${data.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fmt(data.netProfit)}</div>
-        <div className="text-sm text-gray-600 mt-1">صافي الربح</div>
+      <div className="p-6 bg-white rounded-xl border-t-4 border-emerald-500 shadow-sm">
+        <div className="text-3xl font-bold text-emerald-700 tabular-nums">{fmt(data.totalRevenue)}</div>
+        <div className="text-sm text-gray-500 mt-1 font-medium">إجمالي الإيرادات</div>
+      </div>
+      <div className="p-6 bg-white rounded-xl border-t-4 border-red-500 shadow-sm">
+        <div className="text-3xl font-bold text-red-700 tabular-nums">{fmt(data.totalExpenses)}</div>
+        <div className="text-sm text-gray-500 mt-1 font-medium">إجمالي المصروفات</div>
+      </div>
+      <div className={`p-6 bg-white rounded-xl border-t-4 shadow-sm ${data.netProfit >= 0 ? 'border-emerald-500' : 'border-red-500'}`}>
+        <div className={`text-3xl font-bold tabular-nums ${data.netProfit >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+          {fmt(data.netProfit)}
+        </div>
+        <div className="text-sm text-gray-500 mt-1 font-medium">صافي الربح</div>
       </div>
     </div>
+
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-400">حالة الفواتير</h5>
-        {[
-          { label: 'إجمالي الفواتير', val: data.totalInvoices, color: '' },
-          { label: 'المدفوع', val: data.paidInvoices, color: 'text-green-600' },
-          { label: 'المعلق', val: data.pendingInvoices, color: 'text-gray-600' },
-          { label: 'المتأخر', val: data.overdueInvoices, color: 'text-red-600' },
-        ].map((r) => (
-          <div key={r.label} className={`flex justify-between ${r.color}`}>
-            <span className="text-gray-600">{r.label}:</span><span className="font-medium">{fmt(r.val)}</span>
-          </div>
-        ))}
-      </div>
-      <div className="p-4 border border-gray-200 rounded-lg space-y-2">
-        <h5 className="font-medium text-gray-400">مؤشرات الأداء</h5>
-        <div className="flex justify-between"><span className="text-gray-600">هامش الربح:</span><span className={`font-medium ${data.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>{data.profitMargin.toFixed(1)}%</span></div>
-        <div className="flex justify-between"><span className="text-gray-600">نسبة التحصيل:</span><span className="font-medium text-gray-600">{data.totalInvoices > 0 ? ((data.paidInvoices / data.totalInvoices) * 100).toFixed(1) : 0}%</span></div>
-        <div className="flex justify-between"><span className="text-gray-600">نسبة المصروفات:</span><span className="font-medium text-red-600">{data.totalRevenue > 0 ? ((data.totalExpenses / data.totalRevenue) * 100).toFixed(1) : 0}%</span></div>
-      </div>
+      <SectionBox title="حالة الفواتير">
+        <Row label="إجمالي الفواتير" value={fmt(data.totalInvoices)} />
+        <Row label="المدفوع" value={fmt(data.paidInvoices)} colorCls="text-emerald-700" />
+        <Row label="المعلق" value={fmt(data.pendingInvoices)} colorCls="text-amber-700" />
+        <Row label="المتأخر" value={fmt(data.overdueInvoices)} colorCls="text-red-700" />
+      </SectionBox>
+      <SectionBox title="مؤشرات الأداء">
+        <Row
+          label="هامش الربح"
+          value={`${data.profitMargin.toFixed(1)}%`}
+          colorCls={data.profitMargin >= 0 ? 'text-emerald-700' : 'text-red-700'}
+        />
+        <Row
+          label="نسبة التحصيل"
+          value={`${data.totalInvoices > 0 ? ((data.paidInvoices / data.totalInvoices) * 100).toFixed(1) : 0}%`}
+          colorCls="text-amber-700"
+        />
+        <Row
+          label="نسبة المصروفات"
+          value={`${data.totalRevenue > 0 ? ((data.totalExpenses / data.totalRevenue) * 100).toFixed(1) : 0}%`}
+          colorCls="text-red-700"
+        />
+      </SectionBox>
     </div>
-    <div className="p-4 bg-gray-50 rounded-lg">
-      <h5 className="font-medium text-gray-900 mb-2">ملخص سريع</h5>
-      {data.netProfit >= 0
-        ? <span className="text-green-600 text-sm">✅ المؤسسة تحقق ربحاً إيجابياً بنسبة {data.profitMargin.toFixed(1)}%</span>
-        : <span className="text-red-600 text-sm">⚠️ المؤسسة تعاني من خسارة بقيمة {fmt(Math.abs(data.netProfit))}</span>}
+
+    <div className={`p-4 rounded-xl border ${data.netProfit >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+      <p className={`font-semibold text-sm ${data.netProfit >= 0 ? 'text-emerald-800' : 'text-red-800'}`}>
+        {data.netProfit >= 0
+          ? `✅ المؤسسة تحقق ربحاً إيجابياً بنسبة ${data.profitMargin.toFixed(1)}%`
+          : `⚠️ المؤسسة تعاني من خسارة بقيمة ${fmt(Math.abs(data.netProfit))}`}
+      </p>
     </div>
   </div>
 );
@@ -408,7 +505,6 @@ const ReportsTab: React.FC<ReportsTabProps> = ({ userMap, onSuccess, onError }) 
     }
   };
 
-  // Re-fetch invoices page when pagination changes
   useEffect(() => {
     if (!reportsData || selectedReport !== 'invoices') return;
     let cancelled = false;
@@ -498,42 +594,69 @@ const ReportsTab: React.FC<ReportsTabProps> = ({ userMap, onSuccess, onError }) 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">التقارير المالية الشاملة</h3>
-        <div className="flex items-center space-x-2">
-          <button onClick={handleExport} disabled={loading || !selectedReport} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+    <div className="space-y-6" dir="rtl">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">التقارير المالية الشاملة</h3>
+          <p className="text-sm text-gray-500 mt-0.5">استعرض وصدّر بيانات مالية مفصّلة</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={loading || !selectedReport}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+          >
+            <span>⬇</span>
             {loading ? 'جارِ التصدير...' : 'تصدير البيانات'}
           </button>
-          <button onClick={loadReports} disabled={loading} className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50">
+          <button
+            onClick={loadReports}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+          >
+            <span>↻</span>
             {loading ? 'جارِ التحميل...' : 'تحديث التقارير'}
           </button>
         </div>
       </div>
 
-      {error && <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
+      {/* Error */}
+      {error && (
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+          <span className="text-base">⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
 
       {loading && !reportsData ? (
-        <div className="text-center py-8 text-gray-500">جارِ تحميل التقارير المالية...</div>
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
+          <span className="text-gray-500 text-sm">جارِ تحميل التقارير المالية...</span>
+        </div>
       ) : reportsData ? (
-        <div className="space-y-6">
-          {/* أزرار اختيار التقرير */}
+        <div className="space-y-5">
+          {/* Report Type Selector */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {REPORT_TYPES.map((r) => (
               <button
                 key={r.id}
                 onClick={() => { setSelectedReport(r.id); if (r.id === 'invoices') setInvoicesPage(1); }}
-                className={`p-3 rounded-lg border transition-colors text-right ${selectedReport === r.id ? 'bg-gray-50 border-gray-200 text-gray-700' : 'border-gray-200 hover:bg-gray-500'}`}
+                className={`p-4 rounded-xl border-2 transition-all text-right ${
+                  selectedReport === r.id
+                    ? 'border-gray-800 bg-gray-800 text-white shadow-md'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
               >
-                <div className="text-2xl mb-1">{r.icon}</div>
-                <div className="font-medium text-sm">{r.label}</div>
+                <div className="text-2xl mb-2">{r.icon}</div>
+                <div className="font-semibold text-sm leading-tight">{r.label}</div>
               </button>
             ))}
           </div>
 
-          {/* المحتوى */}
+          {/* Report Content */}
           {selectedReport && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
               {selectedReport === 'invoices' && (
                 <InvoicesReport
                   data={reportsData.invoices}
@@ -553,7 +676,13 @@ const ReportsTab: React.FC<ReportsTabProps> = ({ userMap, onSuccess, onError }) 
           )}
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">اضغط على "تحديث التقارير" لعرض البيانات المالية</div>
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+          <div className="text-5xl">📊</div>
+          <div>
+            <p className="font-semibold text-gray-700">لا توجد بيانات بعد</p>
+            <p className="text-sm text-gray-500 mt-1">اضغط على "تحديث التقارير" لعرض البيانات المالية</p>
+          </div>
+        </div>
       )}
     </div>
   );

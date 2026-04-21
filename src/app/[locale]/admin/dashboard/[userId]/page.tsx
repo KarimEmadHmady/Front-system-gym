@@ -12,7 +12,7 @@ import AdminStatsCards from '@/components/admin/overview/AdminStatsCards';
 import AdminQuickActions from '@/components/admin/overview/AdminQuickActions';
 import AdminRecentActivity from '@/components/admin/overview/AdminRecentActivity';
 import AdminSessionsOverview from '@/components/admin/SessionSchedules';
-import AdminPlansOverview from '@/components/admin/AdminPlansOverview/AdminPlansOverview';
+import AdminPlansOverview from '@/components/admin/AdminPlansOverview';
 import AdminFinancialOverview from '@/components/admin/AdminFinancialOverview';
 import AdminReports from '@/components/admin/AdminReports';
 import AdminSettings from '@/components/admin/AdminSettings';

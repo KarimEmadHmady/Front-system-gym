@@ -43,13 +43,13 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Member</label>
+            <label className="block text-sm font-medium mb-1">العضو</label>
             {mode === 'add' && (
               <input
                 type="text"
                 value={addUserQuery}
                 onChange={(e) => setAddUserQuery(e.target.value)}
-                placeholder="Search by name or phone"
+                placeholder="البحث بالاسم أو الهاتف"
                 className="w-full border rounded p-2 mb-2 bg-gray-800 text-white focus:bg-gray-900 focus:text-white"
               />
             )}
@@ -59,7 +59,7 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
               onChange={e => setForm({ ...form, userId: e.target.value })}
               required
             >
-              <option value="">Select Member</option>
+              <option value="">اختر العضو</option>
               {filteredUsers.map(u => (
                 <option key={u._id} value={u._id}>
                   {u.name} ({u.phone || '-'})
@@ -69,7 +69,7 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Date</label>
+              <label className="block text-sm font-medium mb-1">التاريخ</label>
               <input
                 type="date"
                 className="w-full border rounded p-2 bg-gray-800 text-white focus:bg-gray-900 focus:text-white cursor-pointer"
@@ -80,7 +80,7 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">Time</label>
+              <label className="block text-sm font-medium mb-1">الوقت</label>
               <input
                 type="time"
                 className="w-full border rounded p-2 bg-gray-800 text-white focus:bg-gray-900 focus:text-white cursor-pointer"
@@ -92,20 +92,20 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Status</label>
+            <label className="block text-sm font-medium mb-1">الحالة</label>
             <select
               className="w-full border rounded p-2 bg-gray-800 text-white focus:bg-gray-900 focus:text-white"
               value={form.status}
               onChange={e => setForm({ ...form, status: e.target.value })}
               required
             >
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-              <option value="excused">Excused</option>
+              <option value="present">حاضر</option>
+              <option value="absent">غائب</option>
+              <option value="excused">معتذر</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
+            <label className="block text-sm font-medium mb-1">ملاحظات</label>
             <textarea
               className="w-full border rounded p-2 bg-gray-800 text-white focus:bg-gray-900 focus:text-white"
               value={form.notes}
@@ -120,14 +120,14 @@ export const AttendanceModal: React.FC<AttendanceModalProps> = ({
               onClick={onClose} 
               disabled={loading}
             >
-              Cancel
+              إلغاء
             </button>
             <button 
               type="submit" 
               className="px-4 py-2 rounded bg-gray-600 text-white" 
               disabled={loading}
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? 'جاري الحفظ...' : 'حفظ'}
             </button>
           </div>
         </form>

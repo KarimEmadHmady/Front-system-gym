@@ -342,16 +342,25 @@ const AdminLoyalty = () => {
 
   const exportToExcel = () => {
     try {
-      const data = redemptions.map((r) => ({
-        'User Name': r.userName || '-',
-        'Reward Name': r.rewardName || '-',
-        'Points': r.points || 0,
-        'Type': r.type || '-',
-        'Reason': r.reason || '-',
-        'Date': new Date(r.createdAt).toLocaleDateString('ar-EG'),
-      }));
+      const redemptionData = redemptions
+        .filter(r => r.type === 'redeemed')
+        .map((r) => {
+          const user = users.find(u => u._id === r.userId);
+          const rewardId = typeof r.rewardId === 'string' ? r.rewardId : 
+                     r.rewardId?._id || r.rewardId?.toString() || '';
+                    const reward = rewards.find(reward => reward._id === rewardId);
+          
+          return {
+            'User Name': user?.name || '-',
+            'Reward Name': reward ? reward.name : `ID: ${typeof r.rewardId === 'string' ? r.rewardId.slice(0, 8) : String(r.rewardId || '').slice(0, 8)}...`,
+            'Points Used': Math.abs(r.points) || 0,
+            'Status': r.reason || 'مكتملة',
+            'Notes': r.notes || '-',
+            'Date': new Date(r.createdAt).toLocaleDateString('ar-EG'),
+          };
+        });
 
-      const ws = XLSX.utils.json_to_sheet(data);
+      const ws = XLSX.utils.json_to_sheet(redemptionData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Redemptions');
       XLSX.writeFile(wb, `Redemptions_${new Date().toLocaleDateString('ar-EG').replace(/\//g, '-')}.xlsx`);
@@ -413,8 +422,20 @@ const AdminLoyalty = () => {
               onEditReward={(reward) => {
                 setEditReward(reward);
                 setRewardForm({
-                  ...reward,
-                  valueUnit: reward.valueUnit || 'جنيه'
+                  _id: reward._id,
+                  name: reward.name,
+                  description: reward.description,
+                  pointsRequired: reward.pointsRequired,
+                  category: reward.category,
+                  value: reward.value,
+                  valueUnit: reward.valueUnit || 'جنيه',
+                  stock: reward.stock,
+                  validUntil: reward.validUntil,
+                  conditions: reward.conditions,
+                  isActive: reward.isActive,
+                  minMembershipLevel: reward.minMembershipLevel,
+                  maxRedemptionsPerUser: reward.maxRedemptionsPerUser,
+                  imageUrl: reward.imageUrl
                 });
                 setIsRewardModalOpen(true);
               }}
@@ -435,6 +456,7 @@ const AdminLoyalty = () => {
               totalCount={redemptionsTotalCount}
               users={users}
               rewards={rewards}
+              onExport={exportToExcel}
             />
           )}
 

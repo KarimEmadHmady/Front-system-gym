@@ -32,6 +32,7 @@ export type GetInvoicesFilters = {
   minAmount?: number;
   maxAmount?: number;
   sort?: 'asc' | 'desc';
+  sortBy?: string; // field to sort by (e.g., 'createdAt', 'issueDate', 'amount')
   limit?: number;
   skip?: number;
 };
@@ -69,6 +70,7 @@ export class InvoiceService extends BaseService {
     if (typeof filters?.minAmount === 'number') q.append('minAmount', String(filters.minAmount));
     if (typeof filters?.maxAmount === 'number') q.append('maxAmount', String(filters.maxAmount));
     if (filters?.sort) q.append('sort', filters.sort);
+    if (filters?.sortBy) q.append('sortBy', filters.sortBy);
     if (typeof filters?.limit === 'number') q.append('limit', String(filters.limit));
     if (typeof filters?.skip === 'number') q.append('skip', String(filters.skip));
 

@@ -17,11 +17,12 @@ interface Props {
   totalCount: number;
   users: any[];
   rewards: any[];
+  onExport?: () => void;
 }
 
 const RedemptionsTable: React.FC<Props> = ({
   redemptions, loading, error, filters, setFilters,
-  currentPage, setCurrentPage, pageSize, totalCount, users, rewards
+  currentPage, setCurrentPage, pageSize, totalCount, users, rewards, onExport
 }) => {
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize + 1;
@@ -34,7 +35,22 @@ const RedemptionsTable: React.FC<Props> = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">سجل الاستبدالات</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">سجل الاستبدالات</h3>
+        {onExport && (
+          <button
+            onClick={onExport}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7,10 12,15 17,10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export Excel
+          </button>
+        )}
+      </div>
       
       <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
         <select
@@ -67,6 +83,7 @@ const RedemptionsTable: React.FC<Props> = ({
           type="date"
           value={filters.startDate}
           onChange={(e) => handleFilterChange('startDate', e.target.value)}
+           onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
           placeholder="تاريخ البدء"
         />
@@ -75,6 +92,7 @@ const RedemptionsTable: React.FC<Props> = ({
           type="date"
           value={filters.endDate}
           onChange={(e) => handleFilterChange('endDate', e.target.value)}
+           onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
           placeholder="تاريخ النهاية"
         />
@@ -98,26 +116,41 @@ const RedemptionsTable: React.FC<Props> = ({
                 </tr>
               </thead>
               <tbody>
-                {redemptions.map((redemption, index) => (
-                  <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
-                    <td className="px-4 py-2">{redemption.userName}</td>
-                    <td className="px-4 py-2">{redemption.rewardName}</td>
-                    <td className="px-4 py-2">{redemption.pointsUsed}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-sm ${
-                        redemption.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                        redemption.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {redemption.status === 'completed' ? 'مكتملة' : 
-                         redemption.status === 'pending' ? 'في الانتظار' : 'فشلت'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">{redemption.notes || '-'}</td>
-                    <td className="px-4 py-2">{new Date(redemption.createdAt).toLocaleDateString('ar-EG')}</td>
-                  </tr>
-                ))}
-                {redemptions.length === 0 && (
+                {redemptions
+                  .filter(redemption => redemption.type === 'redeemed')
+                  .filter(redemption => !filters.userId || redemption.userId === filters.userId)
+                  .filter(redemption => !filters.rewardId || redemption.rewardId === filters.rewardId)
+                  .filter(redemption => !filters.startDate || new Date(redemption.createdAt) >= new Date(filters.startDate))
+                  .filter(redemption => !filters.endDate || new Date(redemption.createdAt) <= new Date(filters.endDate))
+                  .map((redemption, index) => {
+                    const user = users.find(u => u._id === redemption.userId);
+                    const rewardId = typeof redemption.rewardId === 'string' ? redemption.rewardId : 
+                     redemption.rewardId?._id || redemption.rewardId?.toString() || '';
+                    const reward = rewards.find(r => r._id === rewardId);
+                    
+                    return (
+                      <tr key={redemption._id} className="border-t border-gray-200 dark:border-gray-700">
+                        <td className="px-4 py-2 text-right">{user?.name || '-'}</td>
+                        <td className="px-4 py-2 text-right">
+                          {reward ? reward.name : `ID: ${rewardId.slice(0, 8)}...`}
+                        </td>
+                        <td className="px-4 py-2 text-right">{Math.abs(redemption.points)}</td>
+                        <td className="px-4 py-2 text-right">
+                          <span className={`px-2 py-1 rounded text-sm bg-green-100 text-green-800`}>
+                            {redemption.reason || 'مكتملة'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-right">{redemption.notes || '-'}</td>
+                        <td className="px-4 py-2 text-right">{new Date(redemption.createdAt).toLocaleDateString('ar-EG')}</td>
+                      </tr>
+                    );
+                  })}
+                {redemptions.filter(r => r.type === 'redeemed')
+                  .filter(redemption => !filters.userId || redemption.userId === filters.userId)
+                  .filter(redemption => !filters.rewardId || redemption.rewardId === filters.rewardId)
+                  .filter(redemption => !filters.startDate || new Date(redemption.createdAt) >= new Date(filters.startDate))
+                  .filter(redemption => !filters.endDate || new Date(redemption.createdAt) <= new Date(filters.endDate))
+                  .length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-gray-500">لا توجد استبدالات</td>
                   </tr>

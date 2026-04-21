@@ -17,6 +17,8 @@ interface Props {
 const RewardModal: React.FC<Props> = ({
   isOpen, onClose, editReward, loading, error, success, onSubmit, form, setForm
 }) => {
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setForm((prev: any) => ({
@@ -77,7 +79,7 @@ const RewardModal: React.FC<Props> = ({
                 <input
                   type="text"
                   name="name"
-                  value={form.name}
+                  value={typeof form.name === 'string' ? form.name : String(form.name || '')}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
                   required
@@ -88,7 +90,7 @@ const RewardModal: React.FC<Props> = ({
                 <input
                   type="number"
                   name="pointsRequired"
-                  value={form.pointsRequired}
+                  value={typeof form.pointsRequired === 'number' ? form.pointsRequired : Number(form.pointsRequired || 0)}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
                   required
@@ -98,7 +100,7 @@ const RewardModal: React.FC<Props> = ({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">التصنيف</label>
                 <select
                   name="category"
-                  value={form.category}
+                  value={typeof form.category === 'string' ? form.category : String(form.category || '')}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
                 >
@@ -113,7 +115,7 @@ const RewardModal: React.FC<Props> = ({
                 <input
                   type="number"
                   name="value"
-                  value={form.value}
+                  value={typeof form.value === 'number' ? form.value : Number(form.value || 0)}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
                 />
@@ -123,7 +125,7 @@ const RewardModal: React.FC<Props> = ({
                 <input
                   type="number"
                   name="stock"
-                  value={form.stock}
+                  value={typeof form.stock === 'number' ? form.stock : Number(form.stock || 0)}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
                 />
@@ -133,8 +135,9 @@ const RewardModal: React.FC<Props> = ({
                 <input
                   type="date"
                   name="validUntil"
-                  value={form.validUntil}
+                  value={typeof form.validUntil === 'string' ? form.validUntil : String(form.validUntil || '')}
                   onChange={handleChange}
+                   onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
                 />
               </div>
@@ -143,7 +146,7 @@ const RewardModal: React.FC<Props> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الوصف</label>
               <textarea
                 name="description"
-                value={form.description}
+                value={typeof form.description === 'string' ? form.description : String(form.description || '')}
                 onChange={handleChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
@@ -154,7 +157,7 @@ const RewardModal: React.FC<Props> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الشروط</label>
               <textarea
                 name="conditions"
-                value={form.conditions}
+                value={typeof form.conditions === 'string' ? form.conditions : String(form.conditions || '')}
                 onChange={handleChange}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800"
@@ -164,7 +167,7 @@ const RewardModal: React.FC<Props> = ({
               <input
                 type="checkbox"
                 name="isActive"
-                checked={form.isActive}
+                checked={typeof form.isActive === 'boolean' ? form.isActive : Boolean(form.isActive)}
                 onChange={handleChange}
                 className="ml-2"
               />

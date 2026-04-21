@@ -1,6 +1,7 @@
 import React from "react";
 import type { GetInvoicesFilters } from "@/services/invoiceService";
 import type { User } from "@/types/models";
+import { useUsers } from "@/hooks/useUsers";
 
 interface Props {
   filters: GetInvoicesFilters;
@@ -16,19 +17,30 @@ const InvoiceFilters: React.FC<Props> = ({
   filters, users, loading, onChangeFilter, onRefresh, onExport, invoicesCount,
 }) => {
   const [userSearch, setUserSearch] = React.useState("");
+  const { search: searchUsers, isLoading: usersLoading } = useUsers();
+  const [searchResults, setSearchResults] = React.useState<User[]>([]);
 
-  const filteredUsers = React.useMemo(() => {
-    const q = userSearch.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        (u.name && u.name.toLowerCase().includes(q)) ||
-        (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.phone && u.phone.toLowerCase().includes(q)) ||
-        (u._id && u._id.toLowerCase().includes(q))
-    );
-  }, [users, userSearch]);
+  React.useEffect(() => {
+    if (userSearch.trim()) {
+      searchUsers({ search: userSearch.trim() }).then(result => {
+        const results = result.data || [];
+        setSearchResults(results);
+        
+        // Auto-select user if exactly one result found
+        if (results.length === 1) {
+          const selectedUser = results[0];
+          onChangeFilter("userId", selectedUser._id);
+        }
+      }).catch(error => {
+        setSearchResults([]);
+      });
+    } else {
+      setSearchResults([]);
+    }
+  }, [userSearch, searchUsers, onChangeFilter]);
 
+  const displayUsers: User[] = userSearch.trim() ? searchResults : users;
+  
   const inputClass = "px-1.5 py-0.5 rounded border dark:bg-gray-900 text-xs w-full h-8 min-w-[110px] sm:max-w-[160px]";
 
   return (
@@ -45,7 +57,7 @@ const InvoiceFilters: React.FC<Props> = ({
             onChange={(e) => onChangeFilter("userId", e.target.value)}
           >
             <option value="">الكل</option>
-            {filteredUsers.map((u) => (
+            {displayUsers.map((u: User) => (
               <option key={u._id} value={u._id}>
                 {u.name} ({u.email}){u.phone ? ` - ${u.phone}` : ""}
               </option>
@@ -54,13 +66,23 @@ const InvoiceFilters: React.FC<Props> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs text-gray-600 dark:text-gray-300 mb-1">بحث عن مستخدم</label>
-          <input
-            className={inputClass}
-            placeholder="اكتب اسم/بريد/ID للبحث"
-            value={userSearch}
-            onChange={(e) => setUserSearch(e.target.value)}
-          />
+          <label className="text-xs text-gray-600 dark:text-gray-300 mb-1"> recherche d'utilisateur</label>
+          <div className="relative">
+            <input
+              className={inputClass}
+              placeholder="Write name/email/ID to search"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
+            {usersLoading && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
+          {userSearch.trim() && searchResults.length === 0 && !usersLoading && (
+            <p className="text-xs text-red-500 mt-1">No users found</p>
+          )}
         </div>
 
         <div className="flex flex-col">

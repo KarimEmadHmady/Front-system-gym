@@ -5,7 +5,7 @@ import type { User } from "@/types/models";
 import * as XLSX from "xlsx";
 import type { InvoiceFormData, EditInvoiceFormData } from "../types";
 
-const DEFAULT_FILTERS: GetInvoicesFilters = { sort: "desc", limit: 20, skip: 0 };
+const DEFAULT_FILTERS: GetInvoicesFilters = { sort: "desc", sortBy: "createdAt", limit: 20, skip: 0 };
 
 const emptyForm = (): InvoiceFormData => ({
   userId: "",
@@ -65,8 +65,8 @@ export const useInvoices = (onSuccess: (t: string, m: string) => void, onError: 
       const base = overrideFilters || filters;
       const effectiveFilters: GetInvoicesFilters = {
         ...base,
-        from: (base.from || base.to) || undefined,
-        to: (base.to || base.from) || undefined,
+        from: base.from || undefined,
+        to: base.to || undefined,
       };
       const raw = await invoiceService.getInvoices(effectiveFilters);
       const res = normalizeResponse(raw);
@@ -89,7 +89,7 @@ export const useInvoices = (onSuccess: (t: string, m: string) => void, onError: 
 
   useEffect(() => {
     fetchData();
-  }, [filters.userId, filters.status, filters.from, filters.to, filters.sort, filters.limit, filters.skip]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filters.userId, filters.status, filters.from, filters.to, filters.sort, filters.sortBy, filters.limit, filters.skip, filters.invoiceNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     (async () => {
@@ -106,9 +106,10 @@ export const useInvoices = (onSuccess: (t: string, m: string) => void, onError: 
   // ── filter change ────────────────────────────────────────────────────────────
   const onChangeFilter = (k: keyof GetInvoicesFilters, v: any) => {
     setFilters((prev) => {
-      if (k === "from") return { ...prev, from: v, to: prev.to || v, skip: 0 };
-      if (k === "to") return { ...prev, to: v, from: prev.from || v, skip: 0 };
-      return { ...prev, [k]: v, skip: 0 };
+      const newFilters = k === "from" ? { ...prev, from: v, skip: 0 } :
+                         k === "to" ? { ...prev, to: v, skip: 0 } :
+                         { ...prev, [k]: v, skip: 0 };
+      return newFilters;
     });
   };
 

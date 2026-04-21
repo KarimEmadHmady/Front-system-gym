@@ -10,7 +10,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import ManagerStatsCards from '@/components/manager/ManagerStatsCards';
 import ManagerQuickActions from '@/components/manager/ManagerQuickActions';
 import ManagerRecentActivity from '@/components/manager/ManagerRecentActivity';
-import AdminPlansOverview from '@/components/admin/AdminPlansOverview/AdminPlansOverview';
+import AdminPlansOverview from '@/components/admin/AdminPlansOverview';
 import AdminAttendanceRefactored from '@/components/admin/attendance/AdminAttendanceRefactored';
 import AdminPayments from '@/components/admin/AdminPayments';
 import AdminPurchases from '@/components/admin/AdminPurchases/AdminPurchases';
@@ -20,7 +20,7 @@ import AdminLoyalty from '@/components/admin/AdminLoyalty/AdminLoyalty';
 import ManagerSettings from '@/components/manager/ManagerSettings';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
 import ManagerFeedback from '@/components/manager/ManagerFeedback';
-import ManagerInvoices from '@/components/manager/ManagerInvoices';
+import AdminInvoices from '@/components/admin/AdminInvoices';
 import AdminSessionsOverview from '@/components/admin/SessionSchedules';
 import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlert/SubscriptionAlertIndicator';
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlert/SubscriptionAlertBadge';
@@ -338,7 +338,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   {activeTab === 'invoices' && (
     <FeatureGate feature="financial" fallback={<FeatureBanner type="locked" role="manager"  />}>
       <div className="space-y-8">
-        <ManagerInvoices />
+        <AdminInvoices />
       </div>
     </FeatureGate>
   )}

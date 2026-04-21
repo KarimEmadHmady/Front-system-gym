@@ -33,7 +33,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
   onPageChange,
 }) => {
   if (loading) {
-    return <div className="text-gray-500 dark:text-gray-400">Loading...</div>;
+    return <div className="text-gray-500 dark:text-gray-400">جاري التحميل...</div>;
   }
 
   if (error) {
@@ -46,22 +46,22 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
         <thead>
           <tr>
             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-              Member Name
+              اسم العضو
             </th>
             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-              Phone
+              الهاتف
             </th>
             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-              Date
+              التاريخ
             </th>
             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-              Time
+              الوقت
             </th>
             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-              Status
+              الحالة
             </th>
             <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-              Notes
+              ملاحظات
             </th>
             <th className="px-4 py-2"></th>
           </tr>
@@ -70,7 +70,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
           {records.length === 0 ? (
             <tr>
               <td colSpan={7} className="text-center py-4 text-gray-400">
-                No attendance records found.
+                لم يتم العثور على سجلات الحضور.
               </td>
             </tr>
           ) : (
@@ -92,8 +92,8 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                     {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap text-center">
-                    {rec.status === 'present' ? 'Present' : 
-                     rec.status === 'absent' ? 'Absent' : 'Excused'}
+                    {rec.status === 'present' ? 'حاضر' : 
+                     rec.status === 'absent' ? 'غائب' : 'معتذر'}
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap text-center">
                     {rec.notes || '-'}
@@ -103,14 +103,14 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                       className="px-2 py-1 rounded bg-gray-200 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900 text-xs transition-colors"
                       onClick={() => onEdit(rec)}
                     >
-                      Edit
+                      تعديل
                     </button>
                     <button
                       className="px-2 py-1 rounded bg-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 text-xs transition-colors disabled:opacity-50"
                       onClick={() => onDelete(rec._id)}
                       disabled={deletingId === rec._id}
                     >
-                      {deletingId === rec._id ? 'Deleting...' : 'Delete'}
+                      {deletingId === rec._id ? 'جاري الحذف...' : 'حذف'}
                     </button>
                   </td>
                 </tr>
@@ -122,7 +122,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
       {records.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 text-sm text-gray-700 dark:text-gray-300">
           <div>
-            Showing {Math.min(startIndex + 1, totalRecords)} to {endIndex} of {totalRecords} results
+            عرض {Math.min(startIndex + 1, totalRecords)} إلى {endIndex} من أصل {totalRecords} نتيجة
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -130,17 +130,17 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
-              Previous
+              السابق
             </button>
             <span>
-              Page {currentPage} of {totalPages}
+              الصفحة {currentPage} من {totalPages}
             </span>
             <button
               className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 disabled:opacity-50"
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              التالي
             </button>
           </div>
         </div>

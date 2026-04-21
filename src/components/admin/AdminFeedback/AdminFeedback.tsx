@@ -321,7 +321,7 @@ const AdminFeedback = () => {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 bg-opacity-40">
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-md relative">
-            <button onClick={() => setShowModal(false)} className="absolute right-3 top-3 text-gray-400 hover:text-red-500"><X size={22} /></button>
+            <button onClick={() => setShowModal(false)} className="absolute left-3 top-3 text-gray-400 hover:text-red-500"><X size={22} /></button>
             <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{editId ? 'تعديل تقييم' : 'إضافة تقييم'}</h4>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

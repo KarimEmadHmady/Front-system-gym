@@ -1,170 +1,172 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { userService, progressService } from '@/services';
+import type { User } from '@/types/models';
+import { UserService } from '@/services/userService';
+import { ProgressService } from '@/services/progressService';
+import { TrendingUp, FileText } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
-// Import extracted components
-import ProgressHeader from './ProgressHeader';
-import ProgressList from './ProgressList';
-import CreateProgressModal from './CreateProgressModal';
-import EditProgressModal from './EditProgressModal';
-import DeleteConfirmModal from './DeleteConfirmModal';
-import { formatDate, formatProgressValue, getProgressStatus } from './utils';
+import StatsCard from './components/StatsCard';
+import ClientCard from './components/ClientCard';
+import Pagination from './components/Pagination';
+import ProgressModal from './components/ProgressModal';
+import type { ProgressRecord } from './types/progress.types';
+
+const ITEMS_PER_PAGE = 10;
+const userService = new UserService();
+const progressService = new ProgressService();
 
 const TrainerProgressOverview = () => {
   const { user } = useAuth();
-  const [clients, setClients] = useState<any[]>([]);
+  const currentTrainerId = (user as any)?._id ?? user?.id ?? '';
+
+  const [clients, setClients] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [progressModalClient, setProgressModalClient] = useState<any>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingProgress, setEditingProgress] = useState<any>(null);
-  const [progressModalList, setProgressModalList] = useState<any[]>([]);
-  const [progressModalLoading, setProgressModalLoading] = useState(false);
-  const [progressDeleteId, setProgressDeleteId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Progress modal state
+  const [selectedClient, setSelectedClient] = useState<User | null>(null);
+  const [progressRecords, setProgressRecords] = useState<ProgressRecord[]>([]);
+  const [progressLoading, setProgressLoading] = useState(false);
+
+  // ─── Fetch clients ──────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchClients = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const res = await userService.getUsersByRole('member', { page: 1, limit: 1000 });
-        const clientList = Array.isArray(res) ? res : (res?.data || []);
-        setClients(clientList);
-      } catch (err: any) {
-        setError(err.message || 'فشل تحميل العملاء');
+        const res: any = await userService.getUsersByRole('member', { page: 1, limit: 1000 });
+        const arr: any[] = Array.isArray(res) ? res : (res?.data || []);
+
+        const normalizeId = (val: any): string => {
+          if (!val) return '';
+          if (typeof val === 'string') return val;
+          if (typeof val === 'object') return (val._id || val.id || '') as string;
+          return String(val);
+        };
+
+        const me = normalizeId(currentTrainerId);
+        setClients(arr.filter((m) => normalizeId(m?.trainerId) === me));
+      } catch {
+        setError('تعذر جلب العملاء');
       } finally {
         setLoading(false);
       }
     };
-
     fetchClients();
-  }, []);
+  }, [currentTrainerId]);
 
-  const handleClientClick = async (client: any) => {
+  // ─── Open progress modal ────────────────────────────────────────────────────
+  const handleViewProgress = async (client: User) => {
+    setSelectedClient(client);
+    setProgressLoading(true);
+    setProgressRecords([]);
     try {
-      setProgressModalLoading(true);
       const list = await progressService.getUserProgress(client._id);
-      setProgressModalList(list);
-      setProgressModalClient(client);
-    } catch (err: any) {
-      setError(err.message || 'فشل تحميل سجلات التقدم');
+      setProgressRecords(list);
+    } catch {
+      setProgressRecords([]);
     } finally {
-      setProgressModalLoading(false);
+      setProgressLoading(false);
     }
   };
 
-  const handleCreateProgress = (progressData: any) => {
-    setProgressModalList(prev => [progressData, ...prev]);
+  // ─── Export clients table ───────────────────────────────────────────────────
+  const handleExportClients = () => {
+    const data = clients.map((c) => ({
+      'الاسم': c.name,
+      'البريد الإلكتروني': c.email,
+      'رقم الهاتف': c.phone || '-',
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Clients');
+    XLSX.writeFile(wb, 'clients_progress_overview.xlsx');
   };
 
-  const handleUpdateProgress = (progressData: any) => {
-    setProgressModalList(prev => prev.map(p => p._id === progressData._id ? progressData : p));
-  };
+  // ─── Pagination ─────────────────────────────────────────────────────────────
+  const totalPages = Math.ceil(clients.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentClients = clients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const handleDeleteProgress = async (id: string) => {
-    try {
-      await progressService.delete(id);
-      setProgressModalList(prev => prev.filter(p => p._id !== id));
-      setProgressDeleteId(null);
-    } catch (err: any) {
-      setError(err.message || 'فشل حذف سجل التقدم');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-red-500 mb-4">{error}</div>
-        <button 
-          onClick={() => {
-            setError(null);
-            window.location.reload();
-          }}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-        >
-          إعادة المحاولة
-        </button>
-      </div>
-    );
-  }
-
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <ProgressHeader
-        progressModalClient={progressModalClient}
-        onShowCreateModal={() => setShowCreateModal(true)}
-      />
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6" dir="rtl">
+      <StatsCard totalClients={clients.length} />
+
+      {/* Clients Table */}
+      <div className="bg-slate-900 border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl">
+        {/* Table Header */}
+        <div className="px-6 py-4 border-b border-slate-700/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-sm font-semibold text-white">تقدم العملاء</h3>
+          </div>
+          <button
+            onClick={handleExportClients}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            تصدير البيانات
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-slate-400">جاري التحميل...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <div className="w-10 h-10 bg-red-600/10 border border-red-500/30 rounded-xl flex items-center justify-center">
+                <span className="text-red-400 font-bold">!</span>
+              </div>
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          ) : currentClients.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <p className="text-sm text-slate-500">لا يوجد عملاء</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {currentClients.map((client) => (
+                <ClientCard
+                  key={client._id}
+                  client={client}
+                  onViewProgress={handleViewProgress}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={clients.length}
+          startIndex={startIndex}
+          endIndex={startIndex + ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </div>
 
       {/* Progress Modal */}
-      {progressModalClient && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setProgressModalClient(null)} />
-          <div className="relative z-10 bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-4xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                سجل تقدم {progressModalClient?.name}
-              </h3>
-              <button
-                onClick={() => setProgressModalClient(null)}
-                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {progressModalLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
-              </div>
-            ) : (
-              <ProgressList
-                progressModalList={progressModalList}
-                progressModalClient={progressModalClient}
-                onProgressModalClientChange={setProgressModalClient}
-                onProgressDeleteIdChange={setProgressDeleteId}
-                onDeleteProgress={handleDeleteProgress}
-              />
-            )}
-          </div>
-        </div>
+      {selectedClient && (
+        <ProgressModal
+          client={selectedClient}
+          records={progressRecords}
+          loading={progressLoading}
+          currentTrainerId={currentTrainerId}
+          onClose={() => setSelectedClient(null)}
+          onRecordsChange={setProgressRecords}
+          setLoading={setProgressLoading}
+        />
       )}
-
-      {/* Create Progress Modal */}
-      <CreateProgressModal
-        showCreateModal={showCreateModal}
-        progressModalClient={progressModalClient}
-        onShowCreateModal={setShowCreateModal}
-        onCreateProgress={handleCreateProgress}
-      />
-
-      {/* Edit Progress Modal */}
-      <EditProgressModal
-        showEditModal={showEditModal}
-        editingProgress={editingProgress}
-        onShowEditModal={setShowEditModal}
-        onUpdateProgress={handleUpdateProgress}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        progressDeleteId={progressDeleteId}
-        onProgressDeleteIdChange={setProgressDeleteId}
-        onDeleteProgress={handleDeleteProgress}
-      />
     </div>
   );
 };
