@@ -11,7 +11,7 @@ import { useSearchParams } from 'next/navigation';
 import AdminStatsCards from '@/components/admin/overview/AdminStatsCards';
 import AdminQuickActions from '@/components/admin/overview/AdminQuickActions';
 import AdminRecentActivity from '@/components/admin/overview/AdminRecentActivity';
-import AdminSessionsOverview from '@/components/admin/AdminSessionsOverview';
+import AdminSessionsOverview from '@/components/admin/SessionSchedules';
 import AdminPlansOverview from '@/components/admin/AdminPlansOverview/AdminPlansOverview';
 import AdminFinancialOverview from '@/components/admin/AdminFinancialOverview';
 import AdminReports from '@/components/admin/AdminReports';

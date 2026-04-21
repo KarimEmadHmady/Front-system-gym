@@ -14,6 +14,7 @@ export { InvoiceService } from './invoiceService';
 export { ExpenseService } from './expenseService';
 export { RevenueService } from './revenueService';
 export { PayrollService } from './payrollService';
+export { ProgressService } from './progressService';
 
 // Import classes for instantiation
 import { UserService } from './userService';
@@ -28,6 +29,7 @@ import { InvoiceService } from './invoiceService';
 import { ExpenseService } from './expenseService';
 import { RevenueService } from './revenueService';
 import { PayrollService } from './payrollService';
+import { ProgressService } from './progressService';
 
 // Service instances for easy access
 export const userService = new UserService();
@@ -42,3 +44,4 @@ export const invoiceService = new InvoiceService();
 export const expenseService = new ExpenseService();
 export const revenueService = new RevenueService();
 export const payrollService = new PayrollService();
+export const progressService = new ProgressService();

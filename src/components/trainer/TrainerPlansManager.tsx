@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import AdminPlansOverview from '@/components/admin/AdminPlansOverview';
+import { AdminPlansOverview } from '@/components/admin/AdminPlansOverview';
 import { useAuth } from '@/hooks/useAuth';
 import { UserService } from '@/services/userService';
 

@@ -21,7 +21,7 @@ import ManagerSettings from '@/components/manager/ManagerSettings';
 import TrainersDirectory from '@/components/shared/TrainersDirectory';
 import ManagerFeedback from '@/components/manager/ManagerFeedback';
 import ManagerInvoices from '@/components/manager/ManagerInvoices';
-import AdminSessionsOverview from '@/components/admin/AdminSessionsOverview';
+import AdminSessionsOverview from '@/components/admin/SessionSchedules';
 import SubscriptionAlertIndicator from '@/components/admin/SubscriptionAlert/SubscriptionAlertIndicator';
 import SubscriptionAlertBadge from '@/components/admin/SubscriptionAlert/SubscriptionAlertBadge';
 import SubscriptionAlertsSummary from '@/components/admin/users/SubscriptionAlertsSummary';

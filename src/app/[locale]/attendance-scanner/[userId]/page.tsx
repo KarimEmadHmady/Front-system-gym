@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import { useAuth } from "@/hooks/useAuth";
-import AttendanceScanner from "@/components/Attendancescanner/Attendancescanner";
+import { AttendanceScanner } from "@/components/Attendancescanner";
 
 export default function Page({ params }: { params: Promise<{ userId: string }> }) {
   const { user } = useAuth();

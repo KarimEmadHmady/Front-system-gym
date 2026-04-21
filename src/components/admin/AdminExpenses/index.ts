@@ -5,3 +5,5 @@ export { default as ExpenseSummary } from './ExpenseSummary';
 export { default as ExpenseTable } from './ExpenseTable';
 export { default as ExpenseViewModal } from './ExpenseViewModal';
 export { default as ExpenseExport } from './ExpenseExport';
+
+export { default } from './AdminExpenses';
