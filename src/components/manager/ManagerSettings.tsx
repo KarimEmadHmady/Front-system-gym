@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { User as UserModel } from '@/types/models';
 import { UserService } from '@/services/userService';
-import SubscriptionAlertSettings from '@/components/admin/SubscriptionAlertSettings';
+import SubscriptionAlertSettings from '@/components/admin/SubscriptionAlert/SubscriptionAlertSettings';
 import { getAuthToken } from '@/lib/api';
 
 // FileInput component for image uploads

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { getSubscriptionAlertService, type SubscriptionAlert } from '@/services/subscriptionAlertService';
-import AlertResetButton from '../AlertResetButton';
-import DismissedAlertsStatus from '../DismissedAlertsStatus';
+import AlertResetButton from '../SubscriptionAlert/AlertResetButton';
+import DismissedAlertsStatus from '../SubscriptionAlert/DismissedAlertsStatus';
 
 interface SubscriptionAlertsSummaryProps {
   className?: string;

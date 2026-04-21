@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { User as UserModel } from '@/types/models';
-import UserSubscriptionAlert from '../UserSubscriptionAlert';
-import AlertResetButton from '../AlertResetButton';
+import UserSubscriptionAlert from '../SubscriptionAlert/UserSubscriptionAlert';
+import AlertResetButton from '../SubscriptionAlert/AlertResetButton';
 
 interface AdminUsersTableListProps {
   users: UserModel[];

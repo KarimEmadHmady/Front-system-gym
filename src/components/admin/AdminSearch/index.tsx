@@ -1,0 +1,324 @@
+'use client';
+
+import React, { useMemo, useState, useEffect } from 'react';
+import { apiGet } from '@/lib/api';
+import { UserService } from '@/services/userService';
+import * as XLSX from 'xlsx';
+import VideoTutorial from '../../VideoTutorial';
+
+import SearchFiltersComponent from './SearchFilters';
+import SearchResults from './SearchResults';
+import SearchPagination from './SearchPagination';
+
+interface SearchResult {
+  type: string;
+  id: string;
+  amount: number;
+  date: string;
+  userId?: string;
+  employeeId?: string;
+  method?: string;
+  sourceType?: string;
+  category?: string;
+  status?: string;
+  invoiceNumber?: string;
+  itemName?: string;
+  notes?: string;
+  bonuses?: number;
+  deductions?: number;
+  raw: any;
+}
+
+interface SearchFiltersState {
+  type: string;
+  userId: string;
+  employeeId: string;
+  invoiceNumber: string;
+  status: string;
+  category: string;
+  sourceType: string;
+  paymentMethod: string;
+  minAmount: string;
+  maxAmount: string;
+  from: string;
+  to: string;
+  sort: string;
+  limit: number;
+}
+
+const AdminSearch = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const [filters, setFilters] = useState<SearchFiltersState>({
+    type: 'all',
+    userId: '',
+    employeeId: '',
+    invoiceNumber: '',
+    status: '',
+    category: '',
+    sourceType: '',
+    paymentMethod: '',
+    minAmount: '',
+    maxAmount: '',
+    from: '',
+    to: '',
+    sort: 'desc',
+    limit: 10
+  });
+
+  const userService = new UserService();
+
+  // جلب المستخدمين للفلترة
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await userService.getUsers({ limit: 500 });
+        const usersArr = Array.isArray(res) ? res : (res?.data || []);
+        setUsers(usersArr);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  // تطبيع رقم الفاتورة المختصر إلى التنسيق القياسي (INV-0001)
+  const normalizeInvoiceNumber = (value: string): string => {
+    if (!value) return value;
+    const trimmed = String(value).trim();
+    // إذا كان بالفعل يبدأ بـ INV- نعيده كما هو
+    if (/^INV-\d+$/i.test(trimmed)) return trimmed.toUpperCase();
+    // لو المستخدم كتب أرقام فقط (مثلاً 2 أو 0002)
+    if (/^\d+$/.test(trimmed)) {
+      const padded = trimmed.padStart(4, '0');
+      return `INV-${padded}`;
+    }
+    // لو كتب inv بدون شرطة أو مسافات
+    const digits = trimmed.replace(/[^0-9]/g, '');
+    if (/^inv/i.test(trimmed) && digits) {
+      const padded = digits.padStart(4, '0');
+      return `INV-${padded}`;
+    }
+    return trimmed;
+  };
+
+  const toLocalYmd = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+
+  const parseToLocalYmd = (value: unknown): string | null => {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return toLocalYmd(value);
+    const str = String(value).trim();
+    if (!str) return null;
+    // If it's already YYYY-MM-DD, keep first 10 chars
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+    const d = new Date(str);
+    if (!Number.isNaN(d.getTime())) return toLocalYmd(d);
+    // Try MM/DD/YYYY or DD/MM/YYYY
+    const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+      const a = Number(m[1]);
+      const b = Number(m[2]);
+      const y = Number(m[3]);
+      // heuristic: if first part > 12 it's definitely day
+      const month = a > 12 ? b : a;
+      const day = a > 12 ? a : b;
+      const dd = new Date(y, month - 1, day);
+      if (!Number.isNaN(dd.getTime())) return toLocalYmd(dd);
+    }
+    return null;
+  };
+
+  const displayedResults = useMemo(() => {
+    const from = filters.from || '';
+    const to = filters.to || '';
+    if (!from && !to) return results;
+
+    const f = from || to;
+    const t = to || from;
+    const effectiveFrom = f && t && f > t ? t : f;
+    const effectiveTo = f && t && f > t ? f : t;
+
+    return results.filter((r) => {
+      const ymd = parseToLocalYmd(r.date);
+      if (!ymd) return false;
+      if (effectiveFrom && ymd < effectiveFrom) return false;
+      if (effectiveTo && ymd > effectiveTo) return false;
+      return true;
+    });
+  }, [results, filters.from, filters.to]);
+
+  // البحث
+  const performSearch = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // إضافة المعاملات غير الفارغة
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== '' && value !== 'all') {
+          if (key === 'limit') return; // لا ترسل limit للسيرفر، نقوم بالتقسيم محلياً
+          if (key === 'from' || key === 'to') return; // فلترة التاريخ تتم محلياً لتجنب مشاكل اختلاف تنسيق/تايمزون
+          if (key === 'invoiceNumber') {
+            const normalized = normalizeInvoiceNumber(String(value));
+            queryParams.append(key, normalized);
+          } else {
+            queryParams.append(key, value.toString());
+          }
+        }
+      });
+
+      const response = await apiGet(`/financial/search?${queryParams.toString()}`) as any;
+      const arr = response.results || [];
+      setResults(arr);
+    } catch (err: any) {
+      setError(err?.message || 'فشل في البحث');
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // البحث التلقائي عند تغيير الفلاتر
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      performSearch();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [filters]);
+
+  // تحديث الفلاتر
+  const updateFilter = (key: keyof SearchFiltersState, value: string | number) => {
+    setFilters((prev: any) => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  };
+
+  // إعادة تعيين الفلاتر
+  const resetFilters = () => {
+    setFilters({
+      type: 'all',
+      userId: '',
+      employeeId: '',
+      invoiceNumber: '',
+      status: '',
+      category: '',
+      sourceType: '',
+      paymentMethod: '',
+      minAmount: '',
+      maxAmount: '',
+      from: '',
+      to: '',
+      sort: 'desc',
+      limit: 10
+    });
+    setCurrentPage(1);
+  };
+
+  // الحصول على معلومات المستخدم
+  const getUserInfo = (userId: string) => {
+    const user = users.find(u => u._id === userId);
+    return user ? { name: user.name, phone: user.phone } : { name: 'غير معروف', phone: '' };
+  };
+
+  const totalCount = displayedResults.length;
+
+  // Pagination (client-side slicing to enforce page size visually)
+  const startIndex = (currentPage - 1) * filters.limit;
+  const endIndex = startIndex + filters.limit;
+  const totalPages = Math.max(1, Math.ceil((displayedResults?.length || 0) / filters.limit));
+  const visibleResults = displayedResults.slice(startIndex, endIndex);
+
+  // حساب مجموع المبالغ في النتائج بعد الفلترة
+  const totalAmount = displayedResults.reduce((sum, r) => sum + (typeof r.amount === 'number' ? r.amount : 0), 0);
+
+  return (
+    <div className="space-y-6">
+       <VideoTutorial 
+        videoId="M5bWRXOoZaw"
+        title="نظام البحث المتقدم والتقارير، اللي بيساعدك توصل لأي معلومة أو عملية مالية في ثواني" 
+         position="bottom-right"
+        buttonText="شرح"
+       />
+      
+      {/* Filters */}
+      <SearchFiltersComponent
+        filters={filters}
+        users={users}
+        showAdvanced={showAdvanced}
+        onFiltersChange={updateFilter}
+        onToggleAdvanced={() => setShowAdvanced(!showAdvanced)}
+        onResetFilters={resetFilters}
+      />
+
+      {/* Results */}
+      <SearchResults
+        loading={loading}
+        error={error}
+        visibleResults={visibleResults}
+        totalCount={totalCount}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        totalAmount={totalAmount}
+        getUserInfo={getUserInfo}
+        onExportToExcel={() => {
+          const exportData = visibleResults.map((result) => {
+            const userInfo = result.userId ? getUserInfo(result.userId) : null;
+            const dateObj = new Date(result.date);
+            
+            return {
+              'نوع المعاملة': result.type === 'revenue' ? 'إيراد' : 
+                                 result.type === 'expense' ? 'مصروف' : 
+                                 result.type === 'invoice' ? 'فاتورة' : 
+                                 result.type === 'payroll' ? 'راتب' : 
+                                 result.type === 'payment' ? 'دفعة' : 'شراء',
+              'المبلغ (ج.م)': result.amount,
+              'التاريخ': dateObj.toLocaleDateString('en-GB'),
+              'الساعة': dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+              'اسم المستخدم': userInfo?.name || '-',
+              'هاتف المستخدم': userInfo?.phone || '-',
+              'رقم الفاتورة': result.invoiceNumber || '-',
+              'اسم المنتج': result.itemName || '-',
+              'طريقة الدفع': result.method || '-',
+              'الحالة': result.status || '-',
+              'الفئة': result.category || '-',
+              'نوع المصدر': result.sourceType || '-',
+              'المكافآت': result.bonuses || '-',
+              'الخصومات': result.deductions || '-',
+              'ملاحظات': result.notes || '-'
+            };
+          });
+
+          const worksheet = XLSX.utils.json_to_sheet(exportData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'نتائج_البحث');
+          
+          // تصدير الملف
+          const fileName = `نتائج_البحث_${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.xlsx`;
+          XLSX.writeFile(workbook, fileName);
+        }}
+      />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <SearchPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalCount={totalCount}
+          onPageChange={setCurrentPage}
+        />
+      )}
+    </div>
+  );
+};
+
+export default AdminSearch;

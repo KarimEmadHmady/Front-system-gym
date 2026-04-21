@@ -6,7 +6,7 @@ import { UserService } from '@/services/userService';
 import type { User } from '@/types/models';
 import { useAuth } from '@/hooks/useAuth';
 import * as XLSX from 'xlsx';
-import VideoTutorial from '../VideoTutorial';
+import VideoTutorial from '../../VideoTutorial';
 
 const AdminPurchases = () => {
   const { user } = useAuth();

@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Clock, Calendar, QrCode,
   Scan, Camera, ArrowRight, Wifi, WifiOff,
 } from 'lucide-react';
-import QRCodeScanner from '@/components/admin/QRCodeScanner';
+import QRCodeScanner from '@/components/admin/QRCodeScanner/QRCodeScanner';
 import { attendanceScanService } from '@/services/membershipCardService';
 import { queueAttendance } from '@/lib/offlineSync';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
