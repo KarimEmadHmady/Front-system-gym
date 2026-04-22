@@ -114,8 +114,11 @@ const AdminMembershipCards = () => {
 
   const fetchUsers = async () => {
     try {
-      const data = await userService.getUsers();
-      setUsers(data);
+      const response = await userService.getUsers();
+    
+      // Extract the array from the response - handle both direct array and wrapped response
+      const usersArray = Array.isArray(response) ? response : (response as any)?.data || [];
+      setUsers(usersArray);
     } catch {
       toast.error('Error fetching users');
     } finally {
