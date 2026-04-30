@@ -22,6 +22,12 @@ function playSound(type: 'success' | 'error' | 'warning') {
 
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.35);
+
+    // ✅ FIX: إغلاق الـ AudioContext بعد انتهاء الصوت لمنع memory leak
+    setTimeout(() => {
+      ctx.close().catch(() => {});
+    }, 500);
+
   } catch {}
 }
 

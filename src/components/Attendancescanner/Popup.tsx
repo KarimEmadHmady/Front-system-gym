@@ -65,7 +65,10 @@ const Popup: React.FC<PopupProps> = ({ popup, onClose }) => {
         <div className={`${cfg.bg} px-6 pt-8 pb-6 text-center`}>
           <div className="flex justify-center mb-4">{cfg.icon}</div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{popup.title}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{popup.message}</p>
+          <p 
+            className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line"
+            dangerouslySetInnerHTML={{ __html: popup.message }}
+          />
 
           {popup.data && (
             <div className="mt-4 bg-white/60 dark:bg-gray-800/60 rounded-xl p-3 text-right space-y-1">
@@ -85,27 +88,30 @@ const Popup: React.FC<PopupProps> = ({ popup, onClose }) => {
               {/* Recent Attendance Section */}
               {popup.data.recentAttendance && popup.data.recentAttendance.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {popup.data.recentAttendance.slice(0, 20).map((record, index) => (
-                      <div key={record._id} className="text-xs bg-gray-50 dark:bg-gray-700/30 rounded p-1.5">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">
-                            {record.userId.name}
-                          </span>
-                          <div className="text-left">
-                            <div className="text-gray-600 dark:text-gray-400 text-xs">
-                              {new Date(record.date).toLocaleDateString('ar-SA', {
-                                weekday: 'short',
-                                day: '2-digit',
-                                month: '2-digit'
-                              })}
-                            </div>
-                            <div className="text-gray-500 dark:text-gray-400 text-xs">
-                              {new Date(record.date).toLocaleTimeString('ar-SA', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-right font-medium">
+                    آخر {popup.data.recentAttendance.length} حضور:
+                  </p>
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {popup.data.recentAttendance.slice(0, 20).map((record) => (
+                      <div key={record._id} className="text-xs bg-white/50 dark:bg-gray-700/30 rounded p-1.5 flex justify-between items-center">
+                        {/* ✅ FIX: بنعرض التاريخ والحالة بس، مش اسم اليوزر (هو نفس الشخص دايماً) */}
+                        <span className={`font-medium ${
+                          record.status === 'present'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {record.status === 'present' ? 'حاضر' : 'غائب'}
+                        </span>
+                        <div className="text-right">
+                          <div className="text-gray-600 dark:text-gray-400">
+                            {new Date(record.date).toLocaleDateString('ar-SA', {
+                              weekday: 'short', day: '2-digit', month: '2-digit'
+                            })}
+                          </div>
+                          <div className="text-gray-500 dark:text-gray-400">
+                            {new Date(record.date).toLocaleTimeString('ar-SA', {
+                              hour: '2-digit', minute: '2-digit'
+                            })}
                           </div>
                         </div>
                       </div>

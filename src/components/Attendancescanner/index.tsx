@@ -6,14 +6,12 @@ import { useRouter } from '@/i18n/navigation';
 import { Wifi, WifiOff } from 'lucide-react';
 import QRCodeScanner from '@/components/admin/QRCodeScanner/QRCodeScanner';
 import { attendanceScanService } from '@/services/membershipCardService';
-import { queueAttendance } from '@/lib/offlineSync';
+import { queueAttendance, syncData } from '@/lib/offlineSync';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import VideoTutorial from '@/components/VideoTutorial';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { UserAttendanceModal } from './UserAttendanceModal';
 
-import StatusBadge from './StatusBadge';
-import StatusIcon from './StatusIcon';
 import Popup from './Popup';
 import ScannerCard from './ScannerCard';
 import StatsCard from './StatsCard';
@@ -103,6 +101,7 @@ export function AttendanceScanner({
   const lastScannedTimeRef = useRef<number>(0);
   const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+
   // Network status
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -117,20 +116,29 @@ export function AttendanceScanner({
   }, []);
 
   // Auth guard
-  useEffect(() => {
-    if (isLoading) return;
-    const allowed = role === 'admin'
-      ? user?.role === 'admin'
-      : user?.role === 'manager' || user?.role === 'admin';
-    if (!isAuthenticated || !allowed) { router.push('/'); return; }
-    if (userId && user?.id && userId !== user.id) {
-      const base = role === 'admin' ? 'admin' : 'manager';
-      router.replace(`/ar/${base}/dashboard/${user.id}`);
-      return;
-    }
+useEffect(() => {
+  if (isLoading) return;
+  const allowed = role === 'admin'
+    ? user?.role === 'admin'
+    : user?.role === 'manager' || user?.role === 'admin';
+  if (!isAuthenticated || !allowed) { router.push('/'); return; }
+  if (userId && user?.id && userId !== user.id) {
+    const base = role === 'admin' ? 'admin' : 'manager';
+    router.replace(`/ar/${base}/dashboard/${user.id}`);
+    return;
+  }
+
+  // ✅ نظف الـ records القديمة اللي اتراكمت من قبل التعديل
+  import('@/lib/offlineQueue').then(({ clearSyncedRecords }) => {
+    clearSyncedRecords('attendance').catch(() => {});
+    clearSyncedRecords('payments').catch(() => {});
+  });
+
+  if (navigator.onLine) {
     fetchTodaySummary();
     fetchRecentScans();
-  }, [isAuthenticated, user, isLoading, role, userId, router]);
+  }
+}, [isAuthenticated, user, isLoading, role, userId, router]);
 
   const fetchTodaySummary = async () => {
     try {
@@ -161,21 +169,56 @@ export function AttendanceScanner({
 
   // ✅ FIX: Scan handler محمي بالكامل من deadlock
   const handleScan = useCallback(async (scannedBarcode: string) => {
-    const trimmed = scannedBarcode.trim();
-    if (!trimmed || isScanning) return;
+  const trimmed = scannedBarcode.trim();
+  if (!trimmed || isScanning) return;
 
-    // ✅ FIX: منع نفس الباركود خلال 3 ثواني بس (مش للأبد)
-    const now = Date.now();
-    if (lastScannedRef.current === trimmed && now - lastScannedTimeRef.current < 3000) return;
-    lastScannedRef.current = trimmed;
-    lastScannedTimeRef.current = now;
+  const now = Date.now();
+  if (lastScannedRef.current === trimmed && now - lastScannedTimeRef.current < 3000) return;
+  lastScannedRef.current = trimmed;
+  lastScannedTimeRef.current = now;
 
-    setIsScanning(true);
-    setBarcode('');
+  setIsScanning(true);
+  setBarcode('');
 
-    try {
-      // Offline
-      if (!navigator.onLine) {
+  try {
+    if (!navigator.onLine) {
+      await queueAttendance({
+        clientUuid: `${trimmed}-${Date.now()}`,
+        barcode: trimmed,
+        time: new Date().toISOString(),
+        adminId: user?.id,
+      });
+      playSound('warning');
+      showPopup({
+        type: 'offline',
+        title: 'حفظ أوفلاين',
+        message: 'تم حفظ الحضور مؤقتًا وسيتم مزامنته عند عودة الاتصال.',
+      });
+      fetchTodaySummary();
+      fetchRecentScans();
+      return;
+    }
+
+    const result = await attendanceScanService.scanBarcode(trimmed);
+
+    if (result.success) {
+      playSound('success');
+      showPopup({ type: 'success', title: 'تم بنجاح!', message: result.message, data: result.data });
+      fetchTodaySummary();
+      fetchRecentScans();
+    } else {
+      playSound('warning');
+      showPopup({ type: 'warning', title: 'تحذير!', message: translateError(result.message, trimmed) });
+    }
+
+  } catch (err) {
+    // ✅ FIX: reset lastScanned دايمًا عند الـ error
+    lastScannedRef.current = '';
+
+    // ✅ FIX: لو الـ error بسبب network، احفظ أوفلاين تلقائياً
+    const isNetworkError = err instanceof TypeError && err.message.toLowerCase().includes('fetch');
+    if (isNetworkError) {
+      try {
         await queueAttendance({
           clientUuid: `${trimmed}-${Date.now()}`,
           barcode: trimmed,
@@ -186,35 +229,25 @@ export function AttendanceScanner({
         showPopup({
           type: 'offline',
           title: 'حفظ أوفلاين',
-          message: 'تم حفظ الحضور مؤقتًا وسيتم مزامنته عند عودة الاتصال.',
+          message: 'تعذر الاتصال بالسيرفر، تم حفظ الحضور مؤقتًا.',
         });
         fetchTodaySummary();
         fetchRecentScans();
-        return; // ✅ FIX: return داخل try — finally هيشتغل
+        return;
+      } catch {
+        // لو فشل حتى الـ queue، اعرض الـ error العادي
       }
-
-      // Online
-      const result = await attendanceScanService.scanBarcode(trimmed);
-      if (result.success) {
-        playSound('success');
-        showPopup({ type: 'success', title: 'تم بنجاح!', message: result.message, data: result.data });
-        fetchTodaySummary();
-        fetchRecentScans();
-      } else {
-        playSound('warning');
-        showPopup({ type: 'warning', title: 'تحذير!', message: translateError(result.message, trimmed) });
-      }
-    } catch (err) {
-      // ✅ FIX: reset lastScanned لو حصل error علشان يقدر يجرب تاني
-      lastScannedRef.current = '';
-      playSound('error');
-      const msg = err instanceof Error ? err.message : undefined;
-      showPopup({ type: 'error', title: 'خطأ!', message: translateError(msg, trimmed) });
-    } finally {
-      // ✅ FIX: دايمًا بيرجع isScanning لـ false — مفيش deadlock
-      setIsScanning(false);
     }
-  }, [isScanning, user?.id, showPopup]);
+
+    playSound('error');
+    const msg = err instanceof Error ? err.message : undefined;
+    showPopup({ type: 'error', title: 'خطأ!', message: translateError(msg, trimmed) });
+
+  } finally {
+    // ✅ دايمًا بيرجع isScanning لـ false
+    setIsScanning(false);
+  }
+}, [isScanning, user?.id, showPopup]);
 
   // ✅ FIX: Global keydown — بيعمل close للـ popup لو ظاهر ثم يكمل
   useEffect(() => {
@@ -286,19 +319,19 @@ export function AttendanceScanner({
     if (e.key === 'Enter' && barcode.trim()) handleScan(barcode.trim());
   };
 
-  // ✅ FIX: QR handler مع reset بعد 3 ثواني
-  const handleQRScan = useCallback((data: string) => {
-    setShowQRScanner(false);
-    // Reset last scanned to allow QR scan immediately
-    lastScannedRef.current = '';
-    lastScannedTimeRef.current = 0;
-    try {
-      const parsed = JSON.parse(data);
-      handleScan(parsed.barcode ?? data);
-    } catch {
-      handleScan(data);
-    }
-  }, []);
+
+  // ✅ FIX: أضفنا handleScan في الـ dependencies
+const handleQRScan = useCallback((data: string) => {
+  setShowQRScanner(false);
+  lastScannedRef.current = '';
+  lastScannedTimeRef.current = 0;
+  try {
+    const parsed = JSON.parse(data);
+    handleScan(parsed.barcode ?? data);
+  } catch {
+    handleScan(data);
+  }
+}, [handleScan]); // ✅ dependency مضاف
 
   const handleShowUserAttendance = useCallback(async (scan: any) => {
     if (!scan.userId?._id) return;
@@ -313,13 +346,111 @@ export function AttendanceScanner({
     } catch {
       showPopup({ type: 'error', title: 'خطأ!', message: 'فشل في جلب سجلات الحضور' });
     }
-  }, [showPopup]);
+  }, [showPopup, setUserAttendanceModal]); // ✅ dependency مضاف
 
   const handleCloseUserAttendanceModal = useCallback(() => {
     setUserAttendanceModal({ isOpen: false, userName: '', userId: '', attendanceRecords: [] });
-  }, []);
+  }, [setUserAttendanceModal]); // ✅ dependency مضاف
 
-  if (isLoading) return <LoadingSpinner />;
+  const syncInProgress = useRef(false);
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      if (syncInProgress.current) return;
+      syncInProgress.current = true;
+
+      try {
+        const { syncedCount, failedCount, importantMessages } = await syncData();
+
+        // ✅ اجمع كل الرسايل في رسالة واحدة منظمة
+        const messages: string[] = [];
+        
+        // لو فيه رسايل مهمة، ضيفها
+        if (importantMessages.length > 0) {
+          // لو فيه رسايل متكررة، احسب العدد
+          const messageCounts: Record<string, number> = {};
+          importantMessages.forEach(msg => {
+            messageCounts[msg] = (messageCounts[msg] || 0) + 1;
+          });
+          
+          // انسق الرسايل مع العدد - نفس شكل رسائل المزامنة
+          Object.entries(messageCounts).forEach(([msg, count]) => {
+            messages.push(`⚠️ ${msg} (${count} ${count > 1 ? 'أعضاء' : 'عضو'})`);
+          });
+        }
+        
+        // ضيف رسائل المزامنة
+        if (syncedCount > 0) {
+          messages.push(`✅ تم تسجيل ${syncedCount} حضور بنجاح`);
+        }
+        
+        if (failedCount > 0) {
+          messages.push(`❌ فشل تسجيل ${failedCount} حضور`);
+        }
+        
+        // لو مفيش رسايل مهمة ولا مزامنة، اعرض رسالة الاتصال العادية
+        if (messages.length === 0) {
+          showPopup({
+            type: 'success',
+            title: 'الاتصال عاد',
+            message: 'تم استعادة الاتصال بالإنترنت.',
+          });
+        } else {
+          // حدد نوع الـ popup حسب المحتوى
+          let popupType: 'success' | 'warning' | 'error' = 'success';
+          let popupTitle = 'نتيجة المزامنة';
+          let soundType: 'success' | 'warning' | 'error' = 'success';
+          
+          // لو فيه رسايل مهمة فقط، اجعلها warning
+          if (importantMessages.length > 0 && syncedCount === 0 && failedCount === 0) {
+            popupType = 'warning';
+            popupTitle = 'تنبيهات هامة';
+            soundType = 'warning';
+          }
+          // لو فيه فشل، اجعلها error
+          else if (failedCount > 0) {
+            popupType = 'error';
+            popupTitle = 'نتيجة المزامنة';
+            soundType = 'error';
+          }
+          // لو فيه رسايل مهمة مع مزامنة، اجعلها warning
+          else if (importantMessages.length > 0) {
+            popupType = 'warning';
+            popupTitle = 'تنبيهات ومزامنة';
+            soundType = 'warning';
+          }
+          
+          playSound(soundType);
+          showPopup({
+            type: popupType,
+            title: popupTitle,
+            message: messages.join('<br>'),
+          });
+        }
+        
+        // دايماً حدث البيانات لو فيه مزامنة
+        if (syncedCount > 0 || failedCount > 0) {
+          fetchTodaySummary();
+          fetchRecentScans();
+        }
+      } catch (error) {
+        console.error('Sync error:', error);
+        playSound('error');
+        showPopup({
+          type: 'error',
+          title: 'خطأ في المزامنة',
+          message: 'حدث خطأ أثناء مزامنة البيانات، حاول مرة أخرى.',
+        });
+      } finally {
+        syncInProgress.current = false;
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [showPopup, fetchTodaySummary, fetchRecentScans]); // ✅ dependencies added
+
+if (isLoading) return <LoadingSpinner />;
 
   const validScans = recentScans.filter(s => s.userId);
 
@@ -377,7 +508,7 @@ export function AttendanceScanner({
                 </div>
                 <div className="p-5">
                   <div className="max-h-48 overflow-y-auto space-y-1">
-                    {validScans.slice(0, 20).map((record) => (
+                    {validScans.slice(0, 20).map((record: any) => (
                       <div
                         key={record._id}
                         className="text-xs bg-gray-50 dark:bg-gray-700/30 rounded p-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"

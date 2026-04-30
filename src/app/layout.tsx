@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import { Cairo, Roboto } from "next/font/google"; 
 import "./globals.css";
-import ClientOnlineSync from "@/components/ClientOnlineSync";
 import { gymName } from "@/lib/gym-name";
 import { fallbackLogo192, fallbackLogo512 } from "@/lib/gym-branding";
 import { getLocale } from "next-intl/server";
@@ -76,7 +75,6 @@ export default async function RootLayout({
       <body className={`${cairo.variable} ${roboto.variable} antialiased`}>
         {children}
         {/* Initialize online listener in a client component */}
-        <ClientOnlineSync />
       </body>
     </html>
   );
