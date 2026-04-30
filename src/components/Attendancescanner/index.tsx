@@ -3,10 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from '@/i18n/navigation';
-import {
-  CheckCircle, XCircle, Clock, Calendar, QrCode,
-  Scan, Camera, ArrowRight, Wifi, WifiOff,
-} from 'lucide-react';
+import { Wifi, WifiOff } from 'lucide-react';
 import QRCodeScanner from '@/components/admin/QRCodeScanner/QRCodeScanner';
 import { attendanceScanService } from '@/services/membershipCardService';
 import { queueAttendance } from '@/lib/offlineSync';
@@ -15,7 +12,6 @@ import VideoTutorial from '@/components/VideoTutorial';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { UserAttendanceModal } from './UserAttendanceModal';
 
-// Import extracted components
 import StatusBadge from './StatusBadge';
 import StatusIcon from './StatusIcon';
 import Popup from './Popup';
@@ -71,7 +67,6 @@ interface PopupState {
   data?: AttendanceResult['data'];
 }
 
-// Props
 interface AttendanceScannerProps {
   userId: string;
   role: 'admin' | 'manager';
@@ -100,15 +95,12 @@ export function AttendanceScanner({
     userName: string;
     userId: string;
     attendanceRecords: any[];
-  }>({
-    isOpen: false,
-    userName: '',
-    userId: '',
-    attendanceRecords: []
-  });
+  }>({ isOpen: false, userName: '', userId: '', attendanceRecords: [] });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  // ✅ FIX: reset lastScannedRef بعد فترة علشان نفس الباركود يتسجل تاني
   const lastScannedRef = useRef('');
+  const lastScannedTimeRef = useRef<number>(0);
   const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Network status
@@ -118,7 +110,10 @@ export function AttendanceScanner({
     const off = () => setIsOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
   }, []);
 
   // Auth guard
@@ -137,7 +132,6 @@ export function AttendanceScanner({
     fetchRecentScans();
   }, [isAuthenticated, user, isLoading, role, userId, router]);
 
-  // Data fetchers
   const fetchTodaySummary = async () => {
     try {
       const data = await attendanceScanService.getTodayAttendanceSummary();
@@ -152,31 +146,39 @@ export function AttendanceScanner({
     } catch {}
   };
 
-  // Auto-close popup
   const showPopup = useCallback((state: PopupState) => {
     if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
     setPopup(state);
-    // Increase popup display time to 6 seconds for better visibility
     popupTimerRef.current = setTimeout(() => setPopup(null), 6000);
   }, []);
 
   const closePopup = useCallback(() => {
     if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
     setPopup(null);
+    // ✅ FIX: فوكس فوري بعد غلق الـ popup بدون delay طويل
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
-  // Scan handler
+  // ✅ FIX: Scan handler محمي بالكامل من deadlock
   const handleScan = useCallback(async (scannedBarcode: string) => {
-    if (!scannedBarcode.trim() || isScanning) return;
+    const trimmed = scannedBarcode.trim();
+    if (!trimmed || isScanning) return;
+
+    // ✅ FIX: منع نفس الباركود خلال 3 ثواني بس (مش للأبد)
+    const now = Date.now();
+    if (lastScannedRef.current === trimmed && now - lastScannedTimeRef.current < 3000) return;
+    lastScannedRef.current = trimmed;
+    lastScannedTimeRef.current = now;
+
     setIsScanning(true);
     setBarcode('');
 
-    // Offline
-    if (!navigator.onLine) {
-      try {
+    try {
+      // Offline
+      if (!navigator.onLine) {
         await queueAttendance({
-          clientUuid: `${scannedBarcode}-${Date.now()}`,
-          barcode: scannedBarcode,
+          clientUuid: `${trimmed}-${Date.now()}`,
+          barcode: trimmed,
           time: new Date().toISOString(),
           adminId: user?.id,
         });
@@ -188,18 +190,11 @@ export function AttendanceScanner({
         });
         fetchTodaySummary();
         fetchRecentScans();
-      } catch {
-        playSound('error');
-        showPopup({ type: 'error', title: 'خطأ!', message: 'فشل حفظ الحضور مؤقتًا.' });
-      } finally {
-        setIsScanning(false);
+        return; // ✅ FIX: return داخل try — finally هيشتغل
       }
-      return;
-    }
 
-    // Online
-    try {
-      const result = await attendanceScanService.scanBarcode(scannedBarcode);
+      // Online
+      const result = await attendanceScanService.scanBarcode(trimmed);
       if (result.success) {
         playSound('success');
         showPopup({ type: 'success', title: 'تم بنجاح!', message: result.message, data: result.data });
@@ -207,28 +202,35 @@ export function AttendanceScanner({
         fetchRecentScans();
       } else {
         playSound('warning');
-        showPopup({ type: 'warning', title: 'تحذير!', message: translateError(result.message, scannedBarcode) });
+        showPopup({ type: 'warning', title: 'تحذير!', message: translateError(result.message, trimmed) });
       }
     } catch (err) {
+      // ✅ FIX: reset lastScanned لو حصل error علشان يقدر يجرب تاني
+      lastScannedRef.current = '';
       playSound('error');
       const msg = err instanceof Error ? err.message : undefined;
-      showPopup({ type: 'error', title: 'خطأ!', message: translateError(msg, scannedBarcode) });
+      showPopup({ type: 'error', title: 'خطأ!', message: translateError(msg, trimmed) });
     } finally {
+      // ✅ FIX: دايمًا بيرجع isScanning لـ false — مفيش deadlock
       setIsScanning(false);
     }
   }, [isScanning, user?.id, showPopup]);
 
-  // Global keydown — works even when tab is not focused on input
+  // ✅ FIX: Global keydown — بيعمل close للـ popup لو ظاهر ثم يكمل
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (popup || showQRScanner || isScanning) return;
+      // ✅ لو popup ظاهر وحد ضغط Escape أو Enter — قفله
+      if (popup) {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          closePopup();
+        }
+        return;
+      }
+
+      if (showQRScanner || isScanning) return;
 
       const target = e.target as HTMLElement;
-
-      // لو الـ focus على input الباركود نفسه — سيبه للـ onChange
       if (target === inputRef.current) return;
-
-      // Ignore if user is typing in another input/textarea
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
 
       if (e.key === 'Enter') {
@@ -238,12 +240,12 @@ export function AttendanceScanner({
       }
 
       if (e.key === 'Backspace') {
+        e.preventDefault(); // ✅ منع browser back
         setBarcode(prev => prev.slice(0, -1));
         inputRef.current?.focus();
         return;
       }
 
-      // Printable chars only
       if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
         setBarcode(prev => prev + e.key);
         inputRef.current?.focus();
@@ -252,20 +254,16 @@ export function AttendanceScanner({
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [barcode, popup, showQRScanner, isScanning, handleScan]);
+  }, [barcode, popup, showQRScanner, isScanning, handleScan, closePopup]);
 
-  // Auto-focus after popup / QR close
+  // ✅ FIX: Auto-focus بسيط وموثوق بدون delays طويلة
   useEffect(() => {
-    if (!popup && !showQRScanner && inputRef.current && !isScanning) {
-      // Longer delay for mobile to prevent immediate refocusing when opening camera
-      const delay = window.innerWidth <= 768 ? 5000 : 100; // 5 seconds for mobile, 100ms for desktop
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, delay);
+    if (!popup && !showQRScanner && !isScanning) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 150);
+      return () => clearTimeout(timer);
     }
   }, [showQRScanner, popup, isScanning]);
 
-  // Add barcode scanner hook after handleScan is defined
   const { hidConnected, connectHID, disconnectHID } = useBarcodeScanner({
     onScan: handleScan,
     inputRef: inputRef,
@@ -274,7 +272,6 @@ export function AttendanceScanner({
     scanDelay: 50,
   });
 
-  // Input handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (val.includes('\n') || val.includes('\r')) {
@@ -289,10 +286,10 @@ export function AttendanceScanner({
     if (e.key === 'Enter' && barcode.trim()) handleScan(barcode.trim());
   };
 
-  // QR handler
+  // ✅ FIX: QR handler مع reset بعد 3 ثواني
   const handleQRScan = (data: string) => {
-    if (lastScannedRef.current === data) return;
-    lastScannedRef.current = data;
+    const now = Date.now();
+    if (lastScannedRef.current === data && now - lastScannedTimeRef.current < 3000) return;
     setShowQRScanner(false);
     try {
       const parsed = JSON.parse(data);
@@ -302,19 +299,8 @@ export function AttendanceScanner({
     }
   };
 
-  // Helpers
-  const formatTime = (d: string) =>
-    new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-  const handleBack = () => {
-    const base = role === 'admin' ? 'admin' : 'manager';
-    router.push(`/${base}/dashboard/${user?.id ?? userId}`);
-  };
-
-  // User Attendance Modal Handler
   const handleShowUserAttendance = useCallback(async (scan: any) => {
     if (!scan.userId?._id) return;
-    
     try {
       const data = await attendanceScanService.getUserAttendanceRecords(scan.userId._id, 50);
       setUserAttendanceModal({
@@ -323,26 +309,15 @@ export function AttendanceScanner({
         userId: scan.userId._id,
         attendanceRecords: data.data?.records || data.data || []
       });
-    } catch (error) {
-      console.error('Failed to fetch user attendance:', error);
-      showPopup({
-        type: 'error',
-        title: 'خطأ!',
-        message: 'فشل في جلب سجلات الحضور'
-      });
+    } catch {
+      showPopup({ type: 'error', title: 'خطأ!', message: 'فشل في جلب سجلات الحضور' });
     }
   }, [showPopup]);
 
   const handleCloseUserAttendanceModal = useCallback(() => {
-    setUserAttendanceModal({
-      isOpen: false,
-      userName: '',
-      userId: '',
-      attendanceRecords: []
-    });
+    setUserAttendanceModal({ isOpen: false, userName: '', userId: '', attendanceRecords: [] });
   }, []);
 
-  // Guard
   if (isLoading) return <LoadingSpinner />;
 
   const validScans = recentScans.filter(s => s.userId);
@@ -359,11 +334,10 @@ export function AttendanceScanner({
       )}
 
       <div className="container mx-auto p-4 sm:p-6 space-y-6 max-w-5xl">
-        {/* Header */}
         <Header userId={userId} role={role} />
 
         {/* Online indicator */}
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
           isOnline
             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
             : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
@@ -376,10 +350,16 @@ export function AttendanceScanner({
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Scanner card */}
+          {/* ✅ FIX: ScannerCard مع كل الـ props المطلوبة */}
           <ScannerCard
             isOnline={isOnline}
             hidConnected={hidConnected}
+            barcode={barcode}
+            inputRef={inputRef}
+            isScanning={isScanning}
+            onBarcodeChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            onSubmit={() => barcode.trim() && handleScan(barcode.trim())}
             onConnectHID={connectHID}
             onDisconnectHID={disconnectHID}
             onShowQRScanner={() => setShowQRScanner(true)}
@@ -387,20 +367,21 @@ export function AttendanceScanner({
 
           {/* Stats column */}
           <div className="space-y-4">
-            {/* Today summary */}
             <StatsCard todaySummary={todaySummary} />
 
-            {/* Recent scans */}
             {validScans.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <h2 className="font-semibold text-sm text-gray-900 dark:text-white">السجلات الحديثة</h2>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">السجلات الحديثة</span>
                 </div>
                 <div className="p-5">
                   <div className="max-h-48 overflow-y-auto space-y-1">
-                    {validScans.slice(0, 20).map((record, index) => (
-                      <div key={record._id} className="text-xs bg-gray-50 dark:bg-gray-700/30 rounded p-1.5">
+                    {validScans.slice(0, 20).map((record) => (
+                      <div
+                        key={record._id}
+                        className="text-xs bg-gray-50 dark:bg-gray-700/30 rounded p-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
+                        onClick={() => handleShowUserAttendance(record)}
+                      >
                         <div className="flex justify-between items-center">
                           <span className="text-gray-700 dark:text-gray-300 font-medium">
                             {record.userId.name}
@@ -408,15 +389,12 @@ export function AttendanceScanner({
                           <div className="text-left">
                             <div className="text-gray-600 dark:text-gray-400 text-xs">
                               {new Date(record.date).toLocaleDateString('ar-SA', {
-                                weekday: 'short',
-                                day: '2-digit',
-                                month: '2-digit'
+                                weekday: 'short', day: '2-digit', month: '2-digit'
                               })}
                             </div>
                             <div className="text-gray-500 dark:text-gray-400 text-xs">
                               {new Date(record.date).toLocaleTimeString('ar-SA', {
-                                hour: '2-digit',
-                                minute: '2-digit'
+                                hour: '2-digit', minute: '2-digit'
                               })}
                             </div>
                           </div>
@@ -430,17 +408,12 @@ export function AttendanceScanner({
           </div>
         </div>
 
-        {/* ── QR Scanner modal ── */}
         {showQRScanner && (
           <QRCodeScanner onScan={handleQRScan} onClose={() => setShowQRScanner(false)} />
         )}
 
-        {/* Popup */}
-        {popup && (
-          <Popup popup={popup} onClose={closePopup} />
-        )}
+        {popup && <Popup popup={popup} onClose={closePopup} />}
 
-        {/* User Attendance Modal */}
         <UserAttendanceModal
           isOpen={userAttendanceModal.isOpen}
           userName={userAttendanceModal.userName}
