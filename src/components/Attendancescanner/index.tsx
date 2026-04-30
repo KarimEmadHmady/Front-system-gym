@@ -115,6 +115,20 @@ export function AttendanceScanner({
     };
   }, []);
 
+  const fetchTodaySummary = useCallback(async () => {
+    try {
+      const data = await attendanceScanService.getTodayAttendanceSummary();
+      setTodaySummary(data);
+    } catch {}
+  }, []);
+
+  const fetchRecentScans = useCallback(async () => {
+    try {
+      const data = await attendanceScanService.getAttendanceRecords({ limit: 10 });
+      setRecentScans(data.data.records);
+    } catch {}
+  }, []);
+
   // Auth guard
 useEffect(() => {
   if (isLoading) return;
@@ -138,21 +152,7 @@ useEffect(() => {
     fetchTodaySummary();
     fetchRecentScans();
   }
-}, [isAuthenticated, user, isLoading, role, userId, router]);
-
-  const fetchTodaySummary = async () => {
-    try {
-      const data = await attendanceScanService.getTodayAttendanceSummary();
-      setTodaySummary(data);
-    } catch {}
-  };
-
-  const fetchRecentScans = async () => {
-    try {
-      const data = await attendanceScanService.getAttendanceRecords({ limit: 10 });
-      setRecentScans(data.data.records);
-    } catch {}
-  };
+}, [isAuthenticated, user, isLoading, role, userId, router, fetchTodaySummary, fetchRecentScans]);
 
   const showPopup = useCallback((state: PopupState) => {
     if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
@@ -194,8 +194,6 @@ useEffect(() => {
         title: 'حفظ أوفلاين',
         message: 'تم حفظ الحضور مؤقتًا وسيتم مزامنته عند عودة الاتصال.',
       });
-      fetchTodaySummary();
-      fetchRecentScans();
       return;
     }
 
@@ -231,8 +229,6 @@ useEffect(() => {
           title: 'حفظ أوفلاين',
           message: 'تعذر الاتصال بالسيرفر، تم حفظ الحضور مؤقتًا.',
         });
-        fetchTodaySummary();
-        fetchRecentScans();
         return;
       } catch {
         // لو فشل حتى الـ queue، اعرض الـ error العادي
