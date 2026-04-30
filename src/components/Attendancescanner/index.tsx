@@ -287,17 +287,18 @@ export function AttendanceScanner({
   };
 
   // ✅ FIX: QR handler مع reset بعد 3 ثواني
-  const handleQRScan = (data: string) => {
-    const now = Date.now();
-    if (lastScannedRef.current === data && now - lastScannedTimeRef.current < 3000) return;
+  const handleQRScan = useCallback((data: string) => {
     setShowQRScanner(false);
+    // Reset last scanned to allow QR scan immediately
+    lastScannedRef.current = '';
+    lastScannedTimeRef.current = 0;
     try {
       const parsed = JSON.parse(data);
       handleScan(parsed.barcode ?? data);
     } catch {
       handleScan(data);
     }
-  };
+  }, []);
 
   const handleShowUserAttendance = useCallback(async (scan: any) => {
     if (!scan.userId?._id) return;
