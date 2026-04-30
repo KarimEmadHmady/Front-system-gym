@@ -79,24 +79,25 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ onScan, onClose }) => {
   const [lastScannedData, setLastScannedData] = useState<string | null>(null);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualInputValue, setManualInputValue] = useState('');
-
-  const videoRef      = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
-  const scannedRef    = useRef(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<any>(null);
+  const scannedRef = useRef(false);
+  const lastScanTimeRef = useRef(0);
 
   // cleanup on unmount
-const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-useEffect(() => {
-  return () => {
-    stopScanning();
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current); // ناقص
-  };
-}, []);
+  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      stopScanning();
+      if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    };
+  }, []);
 
   const startScanning = async () => {
     setError(null);
     setIsScanning(true);
     scannedRef.current = false;
+    lastScanTimeRef.current = 0;
 
     try {
       const codeReader = new BrowserMultiFormatReader();
@@ -112,8 +113,16 @@ useEffect(() => {
 
       codeReader.decodeFromVideoDevice(deviceId, videoRef.current!, (result) => {
         if (result && !scannedRef.current) {
-          scannedRef.current = true;
+          const now = Date.now();
           const text = result.getText();
+          
+          // Prevent duplicate scans within 2 seconds
+          if (text === lastScannedData && now - lastScanTimeRef.current < 2000) {
+            return;
+          }
+          
+          scannedRef.current = true;
+          lastScanTimeRef.current = now;
           setLastScannedData(text);
           stopScanning();
           onScan(text);
