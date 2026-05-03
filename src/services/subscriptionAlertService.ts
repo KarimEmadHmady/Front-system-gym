@@ -42,6 +42,39 @@ export class SubscriptionAlertService {
   }
 
   /**
+   * جلب جميع المستخدمين عبر جميع الصفحات
+   */
+  private async getAllUsers(): Promise<any[]> {
+    const allUsers: any[] = [];
+    let page = 1;
+    const limit = 100; // حجم الصفحة معقول
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await this.userService.getUsers({ page, limit });
+      const usersArray = Array.isArray(response) ? response : (response as any)?.data || [];
+      
+      if (usersArray.length === 0) {
+        hasMore = false;
+      } else {
+        allUsers.push(...usersArray);
+        
+        // تحقق إذا وصلنا لآخر صفحة
+        const pagination = (response as any)?.pagination;
+        if (pagination && page >= pagination.totalPages) {
+          hasMore = false;
+        } else if (usersArray.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+    }
+
+    return allUsers;
+  }
+
+  /**
    * فحص جميع المستخدمين وإرجاع التحذيرات
    */
   async getSubscriptionAlerts(options?: { force?: boolean }): Promise<SubscriptionAlert[]> {
@@ -55,8 +88,8 @@ export class SubscriptionAlertService {
 
     SubscriptionAlertService.inFlight = (async () => {
     try {
-      const users = await this.userService.getUsers({});
-      const usersArray = Array.isArray(users) ? users : (users as any)?.data || [];
+      // Fetch all users across all pages
+      const usersArray = await this.getAllUsers();
       
       const alerts: SubscriptionAlert[] = [];
       const now = new Date();

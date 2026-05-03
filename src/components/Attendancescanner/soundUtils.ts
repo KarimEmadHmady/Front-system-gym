@@ -1,10 +1,29 @@
+// soundUtils.ts — استبدل الملف كله
+
+let sharedAudioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+    sharedAudioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+  }
+  // ✅ resume لو الـ browser عمل suspend (browser autoplay policy)
+  if (sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+}
+
 function playSound(type: 'success' | 'error' | 'warning') {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
+    const ctx = getAudioContext();
+    const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
+
     osc.connect(gain);
     gain.connect(ctx.destination);
+
     gain.gain.setValueAtTime(0.3, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
 
@@ -22,12 +41,7 @@ function playSound(type: 'success' | 'error' | 'warning') {
 
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.35);
-
-    // ✅ FIX: إغلاق الـ AudioContext بعد انتهاء الصوت لمنع memory leak
-    setTimeout(() => {
-      ctx.close().catch(() => {});
-    }, 500);
-
+    // ✅ مش بنعمل close — بنستخدم نفس الـ context في كل مرة
   } catch {}
 }
 

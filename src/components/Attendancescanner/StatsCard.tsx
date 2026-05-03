@@ -40,7 +40,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ todaySummary }) => {
         <div className="space-y-4">
           <div className="text-center">
             <div className="text-4xl font-black text-gray-800 dark:text-white">
-              {todaySummary.summary.attendanceRate}%
+              {Math.round(todaySummary.summary.attendanceRate)}%
             </div>
             <div className="text-xs text-gray-400 mt-0.5">معدل الحضور</div>
           </div>

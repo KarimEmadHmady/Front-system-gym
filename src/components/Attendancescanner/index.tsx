@@ -11,6 +11,8 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import VideoTutorial from '@/components/VideoTutorial';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { UserAttendanceModal } from './UserAttendanceModal';
+import { getCharFromCode } from './keyboardUtils';
+
 
 import Popup from './Popup';
 import ScannerCard from './ScannerCard';
@@ -167,16 +169,26 @@ useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
+const isScanningRef = useRef(false);
+
   // ✅ FIX: Scan handler محمي بالكامل من deadlock
-  const handleScan = useCallback(async (scannedBarcode: string) => {
+const handleScan = useCallback(async (scannedBarcode: string) => {
   const trimmed = scannedBarcode.trim();
-  if (!trimmed || isScanning) return;
+  if (!trimmed) return;
+
+  // ✅ FIX: استخدم ref بدل state عشان مفيش stale closure
+  if (isScanningRef.current) return;
 
   const now = Date.now();
-  if (lastScannedRef.current === trimmed && now - lastScannedTimeRef.current < 3000) return;
+  if (
+    lastScannedRef.current === trimmed &&
+    now - lastScannedTimeRef.current < 3000
+  ) return;
+
   lastScannedRef.current = trimmed;
   lastScannedTimeRef.current = now;
 
+  isScanningRef.current = true;
   setIsScanning(true);
   setBarcode('');
 
@@ -201,20 +213,29 @@ useEffect(() => {
 
     if (result.success) {
       playSound('success');
-      showPopup({ type: 'success', title: 'تم بنجاح!', message: result.message, data: result.data });
+      showPopup({
+        type: 'success',
+        title: 'تم بنجاح!',
+        message: result.message,
+        data: result.data,
+      });
       fetchTodaySummary();
       fetchRecentScans();
     } else {
       playSound('warning');
-      showPopup({ type: 'warning', title: 'تحذير!', message: translateError(result.message, trimmed) });
+      showPopup({
+        type: 'warning',
+        title: 'تحذير!',
+        message: translateError(result.message, trimmed),
+      });
     }
-
   } catch (err) {
-    // ✅ FIX: reset lastScanned دايمًا عند الـ error
     lastScannedRef.current = '';
 
-    // ✅ FIX: لو الـ error بسبب network، احفظ أوفلاين تلقائياً
-    const isNetworkError = err instanceof TypeError && err.message.toLowerCase().includes('fetch');
+    const isNetworkError =
+      err instanceof TypeError &&
+      err.message.toLowerCase().includes('fetch');
+
     if (isNetworkError) {
       try {
         await queueAttendance({
@@ -231,28 +252,31 @@ useEffect(() => {
         });
         return;
       } catch {
-        // لو فشل حتى الـ queue، اعرض الـ error العادي
+        // لو فشل الـ queue، اعرض الـ error العادي
       }
     }
 
     playSound('error');
     const msg = err instanceof Error ? err.message : undefined;
-    showPopup({ type: 'error', title: 'خطأ!', message: translateError(msg, trimmed) });
-
+    showPopup({
+      type: 'error',
+      title: 'خطأ!',
+      message: translateError(msg, trimmed),
+    });
   } finally {
-    // ✅ دايمًا بيرجع isScanning لـ false
+    // ✅ دايمًا بيرجع للـ false حتى لو في early return
+    isScanningRef.current = false;
     setIsScanning(false);
   }
-}, [isScanning, user?.id, showPopup]);
+  // ✅ مفيش isScanning في الـ dependencies — بنستخدم ref بدله
+}, [user?.id, showPopup, fetchTodaySummary, fetchRecentScans]);
 
   // ✅ FIX: Global keydown — بيعمل close للـ popup لو ظاهر ثم يكمل
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // ✅ لو popup ظاهر وحد ضغط Escape أو Enter — قفله
       if (popup) {
-        if (e.key === 'Escape' || e.key === 'Enter') {
-          closePopup();
-        }
+        if (e.key === 'Escape' || e.key === 'Enter') closePopup();
         return;
       }
 
@@ -260,7 +284,11 @@ useEffect(() => {
 
       const target = e.target as HTMLElement;
       if (target === inputRef.current) return;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) return;
 
       if (e.key === 'Enter') {
         const val = barcode.trim();
@@ -269,15 +297,19 @@ useEffect(() => {
       }
 
       if (e.key === 'Backspace') {
-        e.preventDefault(); // ✅ منع browser back
+        e.preventDefault();
         setBarcode(prev => prev.slice(0, -1));
         inputRef.current?.focus();
         return;
       }
 
-      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        setBarcode(prev => prev + e.key);
-        inputRef.current?.focus();
+      // ✅ FIX: استخدم e.code بدل e.key عشان يتجنب Arabic keyboard layout
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        const char = getCharFromCode(e.code, e.shiftKey);
+        if (char) {
+          setBarcode(prev => prev + char);
+          inputRef.current?.focus();
+        }
       }
     };
 
