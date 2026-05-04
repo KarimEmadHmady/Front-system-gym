@@ -49,6 +49,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
   const t = useTranslations('ManagerDashboard');
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(() => searchParams?.get('tab') || 'overview');
+  const [showMoreServices, setShowMoreServices] = useState(false);
   const { triggerExpiryCheck } = useWhatsAppActions();
   const hasTriggeredRef = useRef(false);
 
@@ -125,15 +126,21 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     return null;
   }
 
-  const tabs = [
+  // Main tabs displayed in the primary navigation
+  const mainTabs = [
     { id: 'overview', name: 'نظرة عامة', icon: '📊' },
     { id: 'users', name: 'المستخدمين', icon: '👥', showAlert: true },
+    { id: 'attendance', name: 'الحضور', icon: '📝' },
+    { id: 'attendance-log', name: 'سجل الحضور', icon: '🧾' },
+    { id: 'reports', name: 'التقارير', icon: '📈' },
+    { id: 'settings', name: 'الإعدادات', icon: '⚙️' }
+  ];
+
+  // Additional tabs available from More Services
+  const additionalTabs = [
     { id: 'trainers', name: 'المدربون', icon: '👨‍🏫' },
     { id: 'sessions', name: 'الحصص', icon: '🏋️' },
     { id: 'plans', name: 'الخطط', icon: '📋' },
-    { id: 'reports', name: 'التقارير', icon: '📈' },
-    { id: 'attendance', name: 'الحضور', icon: '📝' },
-    { id: 'attendance-log', name: 'سجل الحضور', icon: '🧾' },
     { id: 'payments', name: 'مدفوعات', icon: '💵' },
     { id: 'invoices', name: 'الفواتير', icon: '🧾' },
     { id: 'add-expense', name: 'إضافة مصروف', icon: '💸' },
@@ -142,12 +149,10 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     { id: 'messages', name: 'رسائل', icon: '✉️' },
     { id: 'progress', name: 'تقدم العملاء', icon: '📈' },
     { id: 'feedback', name: 'التقييمات', icon: '⭐' },
-    { id: 'loyalty', name: 'نقاط الولاء', icon: '🎁' },
-    // { id: 'membership-cards', name: 'بطاقات العضوية', icon: '🪪' },
-    { id: 'settings', name: 'الإعدادات', icon: '⚙️' },
-    // { id: 'search', name: 'بحث', icon: '🔎' },
-
+    { id: 'loyalty', name: 'نقاط الولاء', icon: '🎁' }
   ];
+
+  const allTabs = [...mainTabs, ...additionalTabs];
 
   // زر تبديل اللغة
   const otherLocale = locale === 'ar' ? 'en' : 'ar';
@@ -168,11 +173,12 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     <div className="min-h-screen theme-gradient-bg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
             {/* Sidebar */}
             <DashboardSidebar
-        tabs={tabs}
+        tabs={mainTabs}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         header={<h2 className="text-lg font-bold text-gray-700 dark:text-gray-200 text-center">لوحة التحكم</h2>}
         defaultOpen={false}
+        onMoreClick={() => setShowMoreServices(true)}
       />
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -232,7 +238,7 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
       <div className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8 overflow-x-auto">
-            {tabs.map((tab) => (
+            {mainTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
@@ -247,6 +253,16 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
                 {tab.showAlert && <SubscriptionAlertBadge className="ml-2" />}
               </button>
             ))}
+            
+            {/* More Services Button */}
+            <button
+              onClick={() => setShowMoreServices(true)}
+              className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 font-medium text-sm transition-colors whitespace-nowrap mb-4"
+              title="خدمات إضافية"
+            >
+              <span className="mr-2">⋯</span>
+              المزيد
+            </button>
           </nav>
         </div>
       </div>
@@ -407,6 +423,46 @@ const ManagerDashboard = ({ params }: { params: Promise<{ userId: string }> }) =
     </FeatureGate>
   )}
 </div>
+
+      {/* More Services Modal */}
+      {showMoreServices && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">الخدمات الإضافية</h2>
+              <button
+                onClick={() => setShowMoreServices(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">اختر الخدمة التي تريد الوصول إليها</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {additionalTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      handleTabChange(tab.id);
+                      setShowMoreServices(false);
+                    }}
+                    className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-red-50 hover:to-orange-50 dark:hover:from-red-900 dark:hover:to-orange-900 border-2 border-gray-200 dark:border-gray-600 hover:border-red-400 dark:hover:border-red-500 rounded-lg p-4 transition-all duration-200 text-right hover:shadow-lg"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl">{tab.icon}</span>
+                    </div>
+                    <p className="font-semibold text-gray-900 dark:text-white mt-2">{tab.name}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

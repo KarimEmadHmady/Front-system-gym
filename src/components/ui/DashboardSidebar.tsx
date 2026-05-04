@@ -16,6 +16,7 @@ interface DashboardSidebarProps {
   header?: React.ReactNode;
   children?: React.ReactNode;
   defaultOpen?: boolean;
+  onMoreClick?: () => void;
 }
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
@@ -25,6 +26,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   header,
   children,
   defaultOpen = true,
+  onMoreClick,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -89,6 +91,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             )}
           </button>
         ))}
+        {onMoreClick && (
+          <button
+            onClick={() => onMoreClick()}
+            className={`flex items-center w-full px-2 py-3 text-right transition-colors text-sm font-medium gap-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg ${!open ? 'justify-center' : ''}`}
+            title="خدمات إضافية"
+          >
+            <span className="text-lg">⋯</span>
+            {open && <span className="flex-1 text-right">المزيد</span>}
+          </button>
+        )}
       </nav>
       {children && open && <div className="p-4 border-t border-gray-100 dark:border-gray-800">{children}</div>}
     </div>
@@ -149,6 +161,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                   )}
                 </button>
               ))}
+              {onMoreClick && (
+                <button
+                  onClick={() => { onMoreClick(); setMobileOpen(false); }}
+                  className="flex items-center w-full px-3 py-3 rounded-lg text-right transition-colors text-sm font-medium gap-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  title="خدمات إضافية"
+                >
+                  <span className="text-lg">⋯</span>
+                  <span className="flex-1 text-right">المزيد</span>
+                </button>
+              )}
             </nav>
             {children && <div className="p-4 border-t border-gray-100 dark:border-gray-800">{children}</div>}
           </div>
