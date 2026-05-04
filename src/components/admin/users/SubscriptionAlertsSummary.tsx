@@ -29,7 +29,28 @@ const SubscriptionAlertsSummary: React.FC<SubscriptionAlertsSummaryProps> = ({ c
     };
 
     fetchAlerts();
-    // no polling here; indicator handles periodic refresh
+    
+        // Listen for user updates using storage event (more reliable)
+    const handleUserUpdate = (e: StorageEvent) => {
+      if (e.key === 'user-updated') {
+        console.log('User update detected, refreshing subscription alerts');
+        fetchAlerts();
+      }
+    };
+
+    // Also listen for custom event as fallback
+    const handleCustomEvent = () => {
+      console.log('Custom user-updated event received');
+      fetchAlerts();
+    };
+
+    window.addEventListener('storage', handleUserUpdate);
+    window.addEventListener('user-updated', handleCustomEvent);
+    
+    return () => {
+      window.removeEventListener('storage', handleUserUpdate);
+      window.removeEventListener('user-updated', handleCustomEvent);
+    };
   }, []);
 
   if (isLoading) {

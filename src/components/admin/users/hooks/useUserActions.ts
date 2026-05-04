@@ -171,6 +171,9 @@ export const useUserActions = (refresh: () => void, setLoading: (loading: boolea
       await userService.createUser(userData);
       setIsCreateOpen(false);
       refresh();
+      // Dispatch events to refresh subscription alerts (both methods for reliability)
+      localStorage.setItem('user-updated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('user-updated'));
     } catch (err: any) {
       // Extract exact message from API if available
       let errorMessage = 'Error creating user';
@@ -210,7 +213,10 @@ export const useUserActions = (refresh: () => void, setLoading: (loading: boolea
       await userService.updateRole(roleUser!._id, roleForm as any);
       setIsRoleOpen(false);
       refresh();
-      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'Role changed successfully' } }));
+      // Dispatch events to refresh subscription alerts (both methods for reliability)
+      localStorage.setItem('user-updated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('user-updated'));
+      window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم تغيير الدور بنجاح' } }));
     } catch (err: any) {
       // Extract exact message from API if available
       let errorMessage = 'Error changing role';
@@ -433,7 +439,9 @@ export const useUserActions = (refresh: () => void, setLoading: (loading: boolea
       
       setIsEditOpen(false);
       refresh();
-      
+      // Dispatch events to refresh subscription alerts (both methods for reliability)
+      localStorage.setItem('user-updated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('user-updated'));
       window.dispatchEvent(new CustomEvent('toast', { 
         detail: { type: 'success', message: 'User updated successfully' } 
       }));
@@ -457,6 +465,9 @@ export const useUserActions = (refresh: () => void, setLoading: (loading: boolea
     try {
       await userService.deleteUser(id);
       refresh();
+      // Dispatch events to refresh subscription alerts (both methods for reliability)
+      localStorage.setItem('user-updated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('user-updated'));
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'User deleted successfully' } }));
     } catch {
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Error deleting user' } }));
@@ -471,6 +482,9 @@ export const useUserActions = (refresh: () => void, setLoading: (loading: boolea
     try {
       await userService.hardDeleteUser(id);
       refresh();
+      // Dispatch events to refresh subscription alerts (both methods for reliability)
+      localStorage.setItem('user-updated', Date.now().toString());
+      window.dispatchEvent(new CustomEvent('user-updated'));
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'User permanently deleted' } }));
     } catch {
       window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'Error permanently deleting user' } }));

@@ -73,8 +73,30 @@ const SubscriptionAlertIndicator: React.FC<SubscriptionAlertIndicatorProps> = ({
 
     fetchAlerts();
 
+    // Listen for user updates using storage event (more reliable)
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (e.key === 'user-updated') {
+        console.log('User update detected in indicator, refreshing subscription alerts');
+        getSubscriptionAlertService().clearCache(); // Clear cache to force refresh
+        fetchAlerts();
+      }
+    };
+
+    // Also listen for custom event as fallback
+    const handleCustomEvent = () => {
+      console.log('Custom user-updated event received in indicator');
+      getSubscriptionAlertService().clearCache();
+      fetchAlerts();
+    };
+
+    window.addEventListener('storage', handleStorageUpdate);
+    window.addEventListener('user-updated', handleCustomEvent);
+
     if (!refreshOnIntervalMs || refreshOnIntervalMs <= 0) {
-      return;
+      return () => {
+        window.removeEventListener('storage', handleStorageUpdate);
+        window.removeEventListener('user-updated', handleCustomEvent);
+      };
     }
 
     const interval = setInterval(() => {
@@ -83,7 +105,11 @@ const SubscriptionAlertIndicator: React.FC<SubscriptionAlertIndicatorProps> = ({
       fetchAlerts();
     }, refreshOnIntervalMs);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageUpdate);
+      window.removeEventListener('user-updated', handleCustomEvent);
+    };
   }, [enabled, refreshOnIntervalMs]);
 
   if (isLoading) {
