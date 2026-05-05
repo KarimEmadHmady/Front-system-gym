@@ -13,15 +13,6 @@ interface PopupState {
   data?: {
     user: { id: string; name: string; barcode: string; email: string; membershipLevel: string };
     attendance: { id: string; date: string; status: string; time: string };
-    recentAttendance: Array<{
-      _id: string;
-      userId: { name: string; email: string; phone: string };
-      date: string;
-      status: string;
-      notes: string;
-      createdAt: string;
-      updatedAt: string;
-    }>;
   };
 }
 
@@ -55,11 +46,10 @@ const Popup: React.FC<PopupProps> = ({ popup, onClose }) => {
   }[popup.type];
 
   // ✅ FIX: sanitize الـ HTML قبل ما يتعرض — بيمنع XSS
-  const safeMessage =
-    typeof window !== 'undefined'
-      ? DOMPurify.sanitize(popup.message)
-      : popup.message;
-
+const safeMessage =
+  typeof window !== 'undefined'
+    ? DOMPurify.sanitize(popup.message, { ALLOWED_TAGS: ['br', 'strong', 'span'] })
+    : popup.message;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -101,47 +91,7 @@ const Popup: React.FC<PopupProps> = ({ popup, onClose }) => {
                 })}
               </p>
 
-              {popup.data.recentAttendance?.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-right font-medium">
-                    آخر {popup.data.recentAttendance.length} حضور:
-                  </p>
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {popup.data.recentAttendance.slice(0, 20).map((record) => (
-                      <div
-                        key={record._id}
-                        className="text-xs bg-white/50 dark:bg-gray-700/30 rounded p-1.5 flex justify-between items-center"
-                      >
-                        <span
-                          className={`font-medium ${
-                            record.status === 'present'
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-red-600 dark:text-red-400'
-                          }`}
-                        >
-                          {record.status === 'present' ? 'حاضر' : 'غائب'}
-                        </span>
-                        <div className="text-right">
-                          <div className="text-gray-600 dark:text-gray-400">
-                            {new Date(record.date).toLocaleDateString('ar-SA', {
-                              weekday: 'short',
-                              day: '2-digit',
-                              month: '2-digit',
-                            })}
                           </div>
-                          <div className="text-gray-500 dark:text-gray-400">
-                            {new Date(record.date).toLocaleTimeString('ar-SA', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
           )}
         </div>
 

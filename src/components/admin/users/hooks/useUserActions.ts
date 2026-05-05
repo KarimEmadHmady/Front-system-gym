@@ -439,6 +439,16 @@ export const useUserActions = (refresh: () => void, setLoading: (loading: boolea
       
       setIsEditOpen(false);
       refresh();
+
+          // ✅ تحديث viewUser لو كان مودال العرض مفتوح لنفس المستخدم
+    if (isViewOpen && viewUser?._id === editUser!._id) {
+      try {
+        const updatedUser = await userService.getUser(editUser!._id);
+        setViewUser(updatedUser);
+      } catch {
+        // تجاهل الخطأ
+      }
+    }
       // Dispatch events to refresh subscription alerts (both methods for reliability)
       localStorage.setItem('user-updated', Date.now().toString());
       window.dispatchEvent(new CustomEvent('user-updated'));

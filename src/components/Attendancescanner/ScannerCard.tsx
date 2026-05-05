@@ -5,29 +5,23 @@ import { QrCode, Scan, Camera } from 'lucide-react';
 
 interface ScannerCardProps {
   isOnline: boolean;
-  hidConnected: boolean;
   barcode: string;                                          // ✅ مضاف
   inputRef: React.RefObject<HTMLInputElement | null>;       // ✅ مضاف
   isScanning: boolean;                                     // ✅ مضاف
   onBarcodeChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // ✅ مضاف
   onKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;    // ✅ مضاف
   onSubmit: () => void;                                    // ✅ مضاف
-  onConnectHID: () => void;
-  onDisconnectHID: () => void;
   onShowQRScanner: () => void;
 }
 
 const ScannerCard: React.FC<ScannerCardProps> = ({
   isOnline,
-  hidConnected,
   barcode,
   inputRef,
   isScanning,
   onBarcodeChange,
   onKeyPress,
   onSubmit,
-  onConnectHID,
-  onDisconnectHID,
   onShowQRScanner,
 }) => {
   return (
@@ -49,7 +43,7 @@ const ScannerCard: React.FC<ScannerCardProps> = ({
             value={barcode}                  // ✅ controlled input
             onChange={onBarcodeChange}       // ✅ onChange
             onKeyDown={onKeyPress}          // ✅ Enter key
-            disabled={isScanning}            // ✅ تعطيل أثناء السكان
+            disabled={false}            // ✅ تعطيل أثناء السكان
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
@@ -66,11 +60,6 @@ const ScannerCard: React.FC<ScannerCardProps> = ({
           />
         </div>
 
-        {/* Hint */}
-        <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-          <Scan className="h-3.5 w-3.5 shrink-0" />
-          يعمل الماسح تلقائياً حتى لو لم يكن الحقل محدداً
-        </p>
 
         {/* Buttons */}
         <div className="flex gap-3">
@@ -90,7 +79,7 @@ const ScannerCard: React.FC<ScannerCardProps> = ({
 
           <button
             onClick={onShowQRScanner}
-            disabled={isScanning}
+            disabled={false}
             className="
               flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm
               border border-gray-200 dark:border-gray-600
@@ -105,35 +94,51 @@ const ScannerCard: React.FC<ScannerCardProps> = ({
             <span>مسح QR</span>
           </button>
         </div>
+        {/* Scanning Instructions */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-medium text-sm">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span>📋 تعليمات المسح الصحيح</span>
+          </div>
 
-        {/* USB Scanner Connection */}
-        <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-          {hidConnected ? (
-            <button
-              onClick={onDisconnectHID}
-              className="w-full py-2 rounded-xl text-sm text-emerald-700 dark:text-emerald-400 
-                            bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 
-                            dark:border-emerald-800 font-medium"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span>تم توصيل جهاز الاسكانر - اضغط للفصل</span>
-              </span>
-            </button>
-          ) : (
-            <button
-              onClick={onConnectHID}
-              className="w-full py-2 rounded-xl text-sm text-gray-600 dark:text-gray-400 
-                            bg-gray-50 dark:bg-gray-700/40 border border-gray-200 
-                            dark:border-gray-700 hover:bg-gray-100 transition-colors font-medium"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <span>توصيل جهاز الاسكانر USB مباشرة (بدون برامج)</span>
-              </span>
-            </button>
-          )}
+          <div className="space-y-2 text-xs">
+
+            <div className="flex items-start gap-2">
+              <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+              <div>
+                <p className="text-gray-700 dark:text-gray-300 font-medium">
+                  فعّل اللغة الإنجليزية (EN) قبل بدء المسح
+                </p>
+                <p className="text-gray-500 dark:text-gray-400">
+                  استخدم Shift + Alt لتغيير اللغة
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+              <div>
+                <p className="text-gray-700 dark:text-gray-300 font-medium">
+                  لا تغلق التبويب أثناء المسح
+                </p>
+                <p className="text-gray-500 dark:text-gray-400">
+                  انتظر حتى تظهر النتيجة
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+            <div className="w-6 h-6 bg-blue-100 dark:bg-blue-800/50 rounded-lg flex items-center justify-center">
+              <span className="text-blue-600 dark:text-blue-400 text-xs font-bold">EN</span>
+            </div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              ⚠️ يجب تفعيل اللغة الإنجليزية لإتمام المسح بنجاح
+            </span>
+          </div>
         </div>
+
       </div>
     </div>
   );

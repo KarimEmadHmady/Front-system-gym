@@ -11,7 +11,6 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import VideoTutorial from '@/components/VideoTutorial';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { UserAttendanceModal } from './UserAttendanceModal';
-import { getCharFromCode } from './keyboardUtils';
 
 
 import Popup from './Popup';
@@ -21,7 +20,7 @@ import Header from './Header';
 import { playSound } from './soundUtils';
 import { translateError } from './errorTranslator';
 
-// Types
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface AttendanceResult {
   success: boolean;
   message: string;
@@ -74,6 +73,7 @@ interface AttendanceScannerProps {
   videoId?: string;
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export function AttendanceScanner({
   userId,
   role,
@@ -83,13 +83,14 @@ export function AttendanceScanner({
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  const [barcode, setBarcode] = useState('');
-  const [isScanning, setIsScanning] = useState(false);
-  const [todaySummary, setTodaySummary] = useState<TodaySummary | null>(null);
-  const [recentScans, setRecentScans] = useState<any[]>([]);
-  const [showQRScanner, setShowQRScanner] = useState(false);
-  const [popup, setPopup] = useState<PopupState | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [barcode, setBarcode]               = useState('');
+  const [todaySummary, setTodaySummary]     = useState<TodaySummary | null>(null);
+  const [recentScans, setRecentScans]       = useState<any[]>([]);
+  const [showQRScanner, setShowQRScanner]   = useState(false);
+  const [popup, setPopup]                   = useState<PopupState | null>(null);
+  const [isOnline, setIsOnline]             = useState(true);
+  const [queueSize, setQueueSize]           = useState(0); // ✅ عدد السكانات في الـ queue
+  const [isProcessingState, setIsProcessingState] = useState(false);
   const [userAttendanceModal, setUserAttendanceModal] = useState<{
     isOpen: boolean;
     userName: string;
@@ -97,17 +98,26 @@ export function AttendanceScanner({
     attendanceRecords: any[];
   }>({ isOpen: false, userName: '', userId: '', attendanceRecords: [] });
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  // ✅ FIX: reset lastScannedRef بعد فترة علشان نفس الباركود يتسجل تاني
-  const lastScannedRef = useRef('');
+  const inputRef          = useRef<HTMLInputElement>(null);
+  const lastScannedRef    = useRef('');
   const lastScannedTimeRef = useRef<number>(0);
-  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupTimerRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncInProgress    = useRef(false);
 
+  useEffect(() => {
+    return () => {
+      if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    };
+  }, []);
 
-  // Network status
+  // ✅ Queue system refs
+  const scanQueueRef      = useRef<string[]>([]);
+  const isProcessingRef   = useRef(false);
+
+  // ─── Network status ───────────────────────────────────────────────────────
   useEffect(() => {
     setIsOnline(navigator.onLine);
-    const on = () => setIsOnline(true);
+    const on  = () => setIsOnline(true);
     const off = () => setIsOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
@@ -117,6 +127,7 @@ export function AttendanceScanner({
     };
   }, []);
 
+  // ─── Data fetchers ────────────────────────────────────────────────────────
   const fetchTodaySummary = useCallback(async () => {
     try {
       const data = await attendanceScanService.getTodayAttendanceSummary();
@@ -131,113 +142,78 @@ export function AttendanceScanner({
     } catch {}
   }, []);
 
-  // Auth guard
-useEffect(() => {
-  if (isLoading) return;
-  const allowed = role === 'admin'
-    ? user?.role === 'admin'
-    : user?.role === 'manager' || user?.role === 'admin';
-  if (!isAuthenticated || !allowed) { router.push('/'); return; }
-  if (userId && user?.id && userId !== user.id) {
-    const base = role === 'admin' ? 'admin' : 'manager';
-    router.replace(`/ar/${base}/dashboard/${user.id}`);
-    return;
-  }
-
-  // ✅ نظف الـ records القديمة اللي اتراكمت من قبل التعديل
-  import('@/lib/offlineQueue').then(({ clearSyncedRecords }) => {
-    clearSyncedRecords('attendance').catch(() => {});
-    clearSyncedRecords('payments').catch(() => {});
-  });
-
-  if (navigator.onLine) {
-    fetchTodaySummary();
-    fetchRecentScans();
-  }
-}, [isAuthenticated, user, isLoading, role, userId, router, fetchTodaySummary, fetchRecentScans]);
-
-  const showPopup = useCallback((state: PopupState) => {
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-    setPopup(state);
-    popupTimerRef.current = setTimeout(() => setPopup(null), 6000);
-  }, []);
-
-  const closePopup = useCallback(() => {
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-    setPopup(null);
-    // ✅ FIX: فوكس فوري بعد غلق الـ popup بدون delay طويل
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
-
-const isScanningRef = useRef(false);
-
-  // ✅ FIX: Scan handler محمي بالكامل من deadlock
-const handleScan = useCallback(async (scannedBarcode: string) => {
-  const trimmed = scannedBarcode.trim();
-  if (!trimmed) return;
-
-  // ✅ FIX: استخدم ref بدل state عشان مفيش stale closure
-  if (isScanningRef.current) return;
-
-  const now = Date.now();
-  if (
-    lastScannedRef.current === trimmed &&
-    now - lastScannedTimeRef.current < 3000
-  ) return;
-
-  lastScannedRef.current = trimmed;
-  lastScannedTimeRef.current = now;
-
-  isScanningRef.current = true;
-  setIsScanning(true);
-  setBarcode('');
-
-  try {
-    if (!navigator.onLine) {
-      await queueAttendance({
-        clientUuid: `${trimmed}-${Date.now()}`,
-        barcode: trimmed,
-        time: new Date().toISOString(),
-        adminId: user?.id,
-      });
-      playSound('warning');
-      showPopup({
-        type: 'offline',
-        title: 'حفظ أوفلاين',
-        message: 'تم حفظ الحضور مؤقتًا وسيتم مزامنته عند عودة الاتصال.',
-      });
+  // ─── Auth guard ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (isLoading) return;
+    const allowed = role === 'admin'
+      ? user?.role === 'admin'
+      : user?.role === 'manager' || user?.role === 'admin';
+    if (!isAuthenticated || !allowed) { router.push('/'); return; }
+    if (userId && user?.id && userId !== user.id) {
+      const base = role === 'admin' ? 'admin' : 'manager';
+      router.replace(`/ar/${base}/dashboard/${user.id}`);
       return;
     }
 
-    const result = await attendanceScanService.scanBarcode(trimmed);
+    import('@/lib/offlineQueue').then(({ clearSyncedRecords }) => {
+      clearSyncedRecords('attendance').catch(() => {});
+      clearSyncedRecords('payments').catch(() => {});
+    });
 
-    if (result.success) {
-      playSound('success');
-      showPopup({
-        type: 'success',
-        title: 'تم بنجاح!',
-        message: result.message,
-        data: result.data,
-      });
+    if (navigator.onLine) {
       fetchTodaySummary();
       fetchRecentScans();
-    } else {
-      playSound('warning');
-      showPopup({
-        type: 'warning',
-        title: 'تحذير!',
-        message: translateError(result.message, trimmed),
-      });
     }
-  } catch (err) {
-    lastScannedRef.current = '';
+  }, [isAuthenticated, user, isLoading, role, userId, router, fetchTodaySummary, fetchRecentScans]);
 
-    const isNetworkError =
-      err instanceof TypeError &&
-      err.message.toLowerCase().includes('fetch');
+  // ─── Popup helpers ────────────────────────────────────────────────────────
+const showPopup = useCallback((state: PopupState) => {
+  if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+  
+  setBarcode('');
+  if (inputRef.current) {
+    inputRef.current.value = ''; // ✅ امسح الـ DOM value مباشرة
+    inputRef.current.blur();     // ✅ شيل الـ focus عشان السكانر التاني ميكتبش فيه
+  }
+  
+  setPopup(state);
+  popupTimerRef.current = setTimeout(() => {
+    setPopup(null);
+    setBarcode('');
+    lastScannedRef.current = '';      // ✅ reset عشان نفس الباركود يشتغل تاني
+    lastScannedTimeRef.current = 0;   // ✅
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, 6000);
+}, []);
 
-    if (isNetworkError) {
-      try {
+const closePopup = useCallback(() => {
+  if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+  setPopup(null);
+  setBarcode('');
+  if (inputRef.current) {
+    inputRef.current.value = ''; // ✅ امسح الـ DOM value مباشرة
+  }
+  lastScannedRef.current = '';      // ✅ reset
+  lastScannedTimeRef.current = 0;   // ✅
+  setTimeout(() => {
+    setBarcode('');
+    inputRef.current?.focus();
+  }, 100);
+}, []);
+  // ─── Queue processor ──────────────────────────────────────────────────────
+const processQueue = useCallback(async () => {
+  if (isProcessingRef.current) return;
+  if (scanQueueRef.current.length === 0) return;
+
+  isProcessingRef.current = true;
+  setIsProcessingState(true); // ✅ UI هيتحدث
+
+  while (scanQueueRef.current.length > 0) {
+    const trimmed = scanQueueRef.current.shift()!;
+    setQueueSize(scanQueueRef.current.length);
+
+    try {
+      if (!navigator.onLine) {
         await queueAttendance({
           clientUuid: `${trimmed}-${Date.now()}`,
           barcode: trimmed,
@@ -248,42 +224,118 @@ const handleScan = useCallback(async (scannedBarcode: string) => {
         showPopup({
           type: 'offline',
           title: 'حفظ أوفلاين',
-          message: 'تعذر الاتصال بالسيرفر، تم حفظ الحضور مؤقتًا.',
+          message: 'تم حفظ الحضور مؤقتًا وسيتم مزامنته عند عودة الاتصال.',
         });
-        return;
-      } catch {
-        // لو فشل الـ queue، اعرض الـ error العادي
+        continue;
       }
-    }
 
-    playSound('error');
-    const msg = err instanceof Error ? err.message : undefined;
-    showPopup({
-      type: 'error',
-      title: 'خطأ!',
-      message: translateError(msg, trimmed),
-    });
-  } finally {
-    // ✅ دايمًا بيرجع للـ false حتى لو في early return
-    isScanningRef.current = false;
-    setIsScanning(false);
+      const result = await attendanceScanService.scanBarcode(trimmed);
+
+      if (result.success) {
+        playSound('success');
+        showPopup({
+          type: 'success',
+          title: 'تم بنجاح!',
+          message: result.message,
+          data: result.data,
+        });
+        fetchTodaySummary();
+        fetchRecentScans();
+      } else {
+        playSound('warning');
+        showPopup({
+          type: 'warning',
+          title: 'تحذير!',
+          message: translateError(result.message, trimmed),
+        });
+      }
+
+    } catch (err) {
+      const isNetworkError =
+        err instanceof TypeError &&
+        err.message.toLowerCase().includes('fetch');
+
+      if (isNetworkError) {
+        try {
+          await queueAttendance({
+            clientUuid: `${trimmed}-${Date.now()}`,
+            barcode: trimmed,
+            time: new Date().toISOString(),
+            adminId: user?.id,
+          });
+          playSound('warning');
+          showPopup({
+            type: 'offline',
+            title: 'حفظ أوفلاين',
+            message: 'تعذر الاتصال بالسيرفر، تم حفظ الحضور مؤقتًا.',
+          });
+          continue;
+        } catch {}
+      }
+
+      playSound('error');
+      const msg = err instanceof Error ? err.message : undefined;
+      showPopup({
+        type: 'error',
+        title: 'خطأ!',
+        message: translateError(msg, trimmed),
+      });
+    }
   }
-  // ✅ مفيش isScanning في الـ dependencies — بنستخدم ref بدله
+
+  isProcessingRef.current = false;
+  setIsProcessingState(false); // ✅
+  setQueueSize(0);
 }, [user?.id, showPopup, fetchTodaySummary, fetchRecentScans]);
 
-  // ✅ FIX: Global keydown — بيعمل close للـ popup لو ظاهر ثم يكمل
+  // ─── Main scan handler ────────────────────────────────────────────────────
+const handleScan = useCallback((scannedBarcode: string) => {
+  const trimmed = scannedBarcode.trim();
+  if (!trimmed) return;
 
+  const now = Date.now();
+  if (
+    lastScannedRef.current === trimmed &&
+    now - lastScannedTimeRef.current < 3000
+  ) return;
+
+  lastScannedRef.current     = trimmed;
+  lastScannedTimeRef.current = now;
+
+  setBarcode('');
+  if (inputRef.current) {
+    inputRef.current.value = ''; // ✅ امسح الـ DOM مباشرة قبل أي حاجة
+  }
+  inputRef.current?.blur();
+
+  scanQueueRef.current.push(trimmed);
+  setQueueSize(scanQueueRef.current.length);
+  processQueue();
+}, [processQueue]);
+
+  // ─── Keyboard handler ─────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (popup) {
-        if (e.key === 'Escape' || e.key === 'Enter') closePopup();
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          closePopup();
+          setBarcode(''); // ✅ امسح عند إغلاق الـ popup بـ Enter/Escape
+        }
         return;
       }
 
-      if (showQRScanner || isScanning) return;
+      if (showQRScanner) return;
 
       const target = e.target as HTMLElement;
-      if (target === inputRef.current) return;
+
+      // ✅ لو الـ focus على الـ input، سيبه يشتغل طبيعي
+      if (target === inputRef.current) {
+        if (e.key === 'Enter' && barcode.trim()) {
+          handleScan(barcode.trim());
+        }
+        return;
+      }
+
       if (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
@@ -299,68 +351,71 @@ const handleScan = useCallback(async (scannedBarcode: string) => {
       if (e.key === 'Backspace') {
         e.preventDefault();
         setBarcode(prev => prev.slice(0, -1));
-        inputRef.current?.focus();
         return;
       }
 
-      // ✅ FIX: استخدم e.code بدل e.key عشان يتجنب Arabic keyboard layout
-      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
-        const char = getCharFromCode(e.code, e.shiftKey);
-        if (char) {
-          setBarcode(prev => prev + char);
-          inputRef.current?.focus();
-        }
+      // ✅ Focus فقط — الـ input هيستقبل الحرف تلقائياً
+      if (!e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1) {
+        inputRef.current?.focus();
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [barcode, popup, showQRScanner, isScanning, handleScan, closePopup]);
+  }, [barcode, popup, showQRScanner, handleScan, closePopup]);
 
-  // ✅ FIX: Auto-focus بسيط وموثوق بدون delays طويلة
+  // ─── Auto-focus ───────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!popup && !showQRScanner && !isScanning) {
+    if (!popup && !showQRScanner) {
       const timer = setTimeout(() => inputRef.current?.focus(), 150);
       return () => clearTimeout(timer);
     }
-  }, [showQRScanner, popup, isScanning]);
+  }, [showQRScanner, popup]);
 
-  const { hidConnected, connectHID, disconnectHID } = useBarcodeScanner({
+  // ─── Barcode scanner hook ─────────────────────────────────────────────────
+  useBarcodeScanner({
     onScan: handleScan,
-    inputRef: inputRef,
-    disabled: !!popup || showQRScanner || isScanning,
+    inputRef,
+    disabled: !!popup || showQRScanner,
     minLength: 3,
     scanDelay: 50,
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val.includes('\n') || val.includes('\r')) {
-      const clean = val.replace(/[\n\r]/g, '').trim();
-      if (clean) handleScan(clean);
-      return;
-    }
-    setBarcode(val);
-  };
+  // ─── Input handlers ───────────────────────────────────────────────────────
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const val = e.target.value;
+
+  if (val.includes('\n') || val.includes('\r')) {
+    const clean = val.replace(/[\n\r]/g, '').trim();
+    if (clean) handleScan(clean);
+    setBarcode('');
+    inputRef.current?.blur();
+    return;
+  }
+
+  // ✅ إزالة الـ dedup اللي كانت بتكسر الباركودات المنتهية بأرقام متكررة
+  const asciiOnly = val.replace(/[^\x20-\x7E]/g, '');
+  setBarcode(asciiOnly);
+};
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && barcode.trim()) handleScan(barcode.trim());
   };
 
+  // ─── QR scan ─────────────────────────────────────────────────────────────
+  const handleQRScan = useCallback((data: string) => {
+    setShowQRScanner(false);
+    lastScannedRef.current     = '';
+    lastScannedTimeRef.current = 0;
+    try {
+      const parsed = JSON.parse(data);
+      handleScan(parsed.barcode ?? data);
+    } catch {
+      handleScan(data);
+    }
+  }, [handleScan]);
 
-  // ✅ FIX: أضفنا handleScan في الـ dependencies
-const handleQRScan = useCallback((data: string) => {
-  setShowQRScanner(false);
-  lastScannedRef.current = '';
-  lastScannedTimeRef.current = 0;
-  try {
-    const parsed = JSON.parse(data);
-    handleScan(parsed.barcode ?? data);
-  } catch {
-    handleScan(data);
-  }
-}, [handleScan]); // ✅ dependency مضاف
-
+  // ─── User attendance modal ────────────────────────────────────────────────
   const handleShowUserAttendance = useCallback(async (scan: any) => {
     if (!scan.userId?._id) return;
     try {
@@ -369,19 +424,18 @@ const handleQRScan = useCallback((data: string) => {
         isOpen: true,
         userName: scan.userId.name,
         userId: scan.userId._id,
-        attendanceRecords: data.data?.records || data.data || []
+        attendanceRecords: data.data?.records || data.data || [],
       });
     } catch {
       showPopup({ type: 'error', title: 'خطأ!', message: 'فشل في جلب سجلات الحضور' });
     }
-  }, [showPopup, setUserAttendanceModal]); // ✅ dependency مضاف
+  }, [showPopup]);
 
   const handleCloseUserAttendanceModal = useCallback(() => {
     setUserAttendanceModal({ isOpen: false, userName: '', userId: '', attendanceRecords: [] });
-  }, [setUserAttendanceModal]); // ✅ dependency مضاف
+  }, []);
 
-  const syncInProgress = useRef(false);
-
+  // ─── Online sync ──────────────────────────────────────────────────────────
   useEffect(() => {
     const handleOnline = async () => {
       if (syncInProgress.current) return;
@@ -389,86 +443,47 @@ const handleQRScan = useCallback((data: string) => {
 
       try {
         const { syncedCount, failedCount, importantMessages } = await syncData();
-
-        // ✅ اجمع كل الرسايل في رسالة واحدة منظمة
         const messages: string[] = [];
-        
-        // لو فيه رسايل مهمة، ضيفها
+
         if (importantMessages.length > 0) {
-          // لو فيه رسايل متكررة، احسب العدد
           const messageCounts: Record<string, number> = {};
           importantMessages.forEach(msg => {
             messageCounts[msg] = (messageCounts[msg] || 0) + 1;
           });
-          
-          // انسق الرسايل مع العدد - نفس شكل رسائل المزامنة
           Object.entries(messageCounts).forEach(([msg, count]) => {
             messages.push(`⚠️ ${msg} (${count} ${count > 1 ? 'أعضاء' : 'عضو'})`);
           });
         }
-        
-        // ضيف رسائل المزامنة
-        if (syncedCount > 0) {
-          messages.push(`✅ تم تسجيل ${syncedCount} حضور بنجاح`);
-        }
-        
-        if (failedCount > 0) {
-          messages.push(`❌ فشل تسجيل ${failedCount} حضور`);
-        }
-        
-        // لو مفيش رسايل مهمة ولا مزامنة، اعرض رسالة الاتصال العادية
+
+        if (syncedCount > 0) messages.push(`✅ تم تسجيل ${syncedCount} حضور بنجاح`);
+        if (failedCount > 0) messages.push(`❌ فشل تسجيل ${failedCount} حضور`);
+
         if (messages.length === 0) {
-          showPopup({
-            type: 'success',
-            title: 'الاتصال عاد',
-            message: 'تم استعادة الاتصال بالإنترنت.',
-          });
+          showPopup({ type: 'success', title: 'الاتصال عاد', message: 'تم استعادة الاتصال بالإنترنت.' });
         } else {
-          // حدد نوع الـ popup حسب المحتوى
           let popupType: 'success' | 'warning' | 'error' = 'success';
           let popupTitle = 'نتيجة المزامنة';
-          let soundType: 'success' | 'warning' | 'error' = 'success';
-          
-          // لو فيه رسايل مهمة فقط، اجعلها warning
+          let soundType: 'success' | 'warning' | 'error'  = 'success';
+
           if (importantMessages.length > 0 && syncedCount === 0 && failedCount === 0) {
-            popupType = 'warning';
-            popupTitle = 'تنبيهات هامة';
-            soundType = 'warning';
+            popupType = 'warning'; popupTitle = 'تنبيهات هامة';    soundType = 'warning';
+          } else if (failedCount > 0) {
+            popupType = 'error';   popupTitle = 'نتيجة المزامنة';  soundType = 'error';
+          } else if (importantMessages.length > 0) {
+            popupType = 'warning'; popupTitle = 'تنبيهات ومزامنة'; soundType = 'warning';
           }
-          // لو فيه فشل، اجعلها error
-          else if (failedCount > 0) {
-            popupType = 'error';
-            popupTitle = 'نتيجة المزامنة';
-            soundType = 'error';
-          }
-          // لو فيه رسايل مهمة مع مزامنة، اجعلها warning
-          else if (importantMessages.length > 0) {
-            popupType = 'warning';
-            popupTitle = 'تنبيهات ومزامنة';
-            soundType = 'warning';
-          }
-          
+
           playSound(soundType);
-          showPopup({
-            type: popupType,
-            title: popupTitle,
-            message: messages.join('<br>'),
-          });
+          showPopup({ type: popupType, title: popupTitle, message: messages.join('<br>') });
         }
-        
-        // دايماً حدث البيانات لو فيه مزامنة
+
         if (syncedCount > 0 || failedCount > 0) {
           fetchTodaySummary();
           fetchRecentScans();
         }
-      } catch (error) {
-        console.error('Sync error:', error);
+      } catch {
         playSound('error');
-        showPopup({
-          type: 'error',
-          title: 'خطأ في المزامنة',
-          message: 'حدث خطأ أثناء مزامنة البيانات، حاول مرة أخرى.',
-        });
+        showPopup({ type: 'error', title: 'خطأ في المزامنة', message: 'حدث خطأ أثناء مزامنة البيانات.' });
       } finally {
         syncInProgress.current = false;
       }
@@ -476,9 +491,10 @@ const handleQRScan = useCallback((data: string) => {
 
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
-  }, [showPopup, fetchTodaySummary, fetchRecentScans]); // ✅ dependencies added
+  }, [showPopup, fetchTodaySummary, fetchRecentScans]);
 
-if (isLoading) return <LoadingSpinner />;
+  // ─── Render ───────────────────────────────────────────────────────────────
+  if (isLoading) return <LoadingSpinner />;
 
   const validScans = recentScans.filter(s => s.userId);
 
@@ -496,36 +512,41 @@ if (isLoading) return <LoadingSpinner />;
       <div className="container mx-auto p-4 sm:p-6 space-y-6 max-w-5xl">
         <Header userId={userId} role={role} />
 
-        {/* Online indicator */}
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
-          isOnline
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
-            : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
-        }`}>
-          {isOnline
-            ? <><Wifi className="h-3.5 w-3.5" /> متصل</>
-            : <><WifiOff className="h-3.5 w-3.5" /> غير متصل</>
-          }
+        {/* Online + Queue indicator */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${
+            isOnline
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
+              : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+          }`}>
+            {isOnline
+              ? <><Wifi className="h-3.5 w-3.5" /> متصل</>
+              : <><WifiOff className="h-3.5 w-3.5" /> غير متصل</>
+            }
+          </div>
+
+          {/* ✅ Queue indicator — بيظهر بس لو في سكانات شغالة */}
+          {queueSize > 0 && (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              جاري معالجة {queueSize} سكان...
+            </div>
+          )}
         </div>
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* ✅ FIX: ScannerCard مع كل الـ props المطلوبة */}
           <ScannerCard
             isOnline={isOnline}
-            hidConnected={hidConnected}
             barcode={barcode}
             inputRef={inputRef}
-            isScanning={isScanning}
+            isScanning={isProcessingState}
             onBarcodeChange={handleInputChange}
             onKeyPress={handleKeyPress}
             onSubmit={() => barcode.trim() && handleScan(barcode.trim())}
-            onConnectHID={connectHID}
-            onDisconnectHID={disconnectHID}
             onShowQRScanner={() => setShowQRScanner(true)}
           />
 
-          {/* Stats column */}
           <div className="space-y-4">
             <StatsCard todaySummary={todaySummary} />
 
@@ -549,12 +570,12 @@ if (isLoading) return <LoadingSpinner />;
                           <div className="text-left">
                             <div className="text-gray-600 dark:text-gray-400 text-xs">
                               {new Date(record.date).toLocaleDateString('ar-SA', {
-                                weekday: 'short', day: '2-digit', month: '2-digit'
+                                weekday: 'short', day: '2-digit', month: '2-digit',
                               })}
                             </div>
                             <div className="text-gray-500 dark:text-gray-400 text-xs">
                               {new Date(record.date).toLocaleTimeString('ar-SA', {
-                                hour: '2-digit', minute: '2-digit'
+                                hour: '2-digit', minute: '2-digit',
                               })}
                             </div>
                           </div>
